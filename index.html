@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PlaySphere — Play Free Online Games</title>
+<meta name="description" content="Play 50+ free online games instantly. No downloads, no registration. Enjoy Snake, Flappy Bird, 2048, and more classic arcade games.">
+<meta name="keywords" content="free online games, browser games, arcade games, snake game, flappy bird, 2048, puzzle games">
+<meta property="og:title" content="PlaySphere — Play Free Online Games">
+<meta property="og:description" content="Play 50+ free online games instantly. No downloads required.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%237C5CFC'/%3E%3Cpath d='M35 40h10v30h-10z M55 30h10v40h-10z' fill='white'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 /* ── PASTE YOUR style.css CONTENTS HERE, OR KEEP AS EXTERNAL LINK ── */
@@ -332,7 +338,7 @@ footer {
     <li><a href="browse.html">Browse</a></li>
     <li><a href="trending.html">Trending</a></li>
     <li><a href="about.html">About</a></li>
-    <li><a href="#" class="nav-cta">Sign Up Free</a></li>
+    <li><a href="#" class="nav-cta" id="signupBtn">Sign Up Free</a></li>
   </ul>
 </nav>
 
@@ -408,7 +414,7 @@ footer {
 
   <!-- Featured large + side -->
   <div class="featured-row reveal">
-    <div class="game-card game-card-lg">
+    <div class="game-card game-card-lg" data-category="arcade">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0533 0%,#4c1d95 40%,#7c3aed 70%,#a855f7 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;">🐍</div>
@@ -440,7 +446,7 @@ footer {
     </div>
 
     <div style="display:flex;flex-direction:column;gap:20px;">
-      <div class="game-card">
+      <div class="game-card" data-category="strategy">
         <div class="card-thumb">
           <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a00 0%,#7c2d12 40%,#ea580c 70%,#fb923c 100%);"></div>
           <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;">⭕</div>
@@ -468,7 +474,7 @@ footer {
   <!-- FIX: merged the two separate .games-grid divs into one so cards sit on the same row -->
   <div class="games-grid reveal">
 
-    <div class="game-card">
+    <div class="game-card" data-category="puzzle">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#00111a 0%,#065f46 40%,#059669 70%,#34d399 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🃏</div>
@@ -486,7 +492,7 @@ footer {
       </div>
     </div>
 
-    <div class="game-card">
+    <div class="game-card" data-category="board">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 40%,#3b82f6 70%,#60a5fa 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🎲</div>
@@ -504,7 +510,7 @@ footer {
       </div>
     </div>
 
-    <div class="game-card">
+    <div class="game-card" data-category="puzzle">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a2e 0%,#16213e 40%,#ffd700 70%,#ff9f43 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🔢</div>
@@ -522,7 +528,7 @@ footer {
       </div>
     </div>
 
-    <div class="game-card">
+    <div class="game-card" data-category="action">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a2e 0%,#7c2d12 40%,#ff4466 70%,#ff9f43 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🎯</div>
@@ -540,7 +546,7 @@ footer {
       </div>
     </div>
 
-    <div class="game-card">
+    <div class="game-card" data-category="action">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#0f0a2e 0%,#1e0a3e 40%,#00cfff 70%,#a855f7 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">☄️</div>
@@ -558,7 +564,7 @@ footer {
       </div>
     </div>
 
-    <div class="game-card">
+    <div class="game-card" data-category="action">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#0a1a2e 0%,#1a0a3e 40%,#00cfff 70%,#ff6b9d 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🏃</div>
@@ -576,7 +582,7 @@ footer {
       </div>
     </div>
 
-    <div class="game-card">
+    <div class="game-card" data-category="action">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a0a 0%,#3a1a0a 40%,#ffd700 70%,#ff9f43 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🐦</div>
@@ -594,7 +600,7 @@ footer {
       </div>
     </div>
 
-    <div class="game-card">
+    <div class="game-card" data-category="puzzle">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a2e 0%,#3a0a2e 40%,#ff4466 70%,#a855f7 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">💣</div>
@@ -612,25 +618,25 @@ footer {
       </div>
     </div>
   
-    <div class="game-card">
+    <div class="game-card" data-category="puzzle">
       <div class="card-thumb">
-        <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a2e 0%,#3a0a2e 40%,#ff4466 70%,#a855f7 100%);"></div>
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">💣</div>
+        <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a2e 0%,#3a0a2e 40%,#4f46e5 70%,#818cf8 100%);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🔢</div>
         <div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
         <span class="card-badge badge-top">⭐ Top</span>
       </div>
       <div class="card-body">
         <div class="card-meta"><span class="card-category">Puzzle</span><span class="card-rating">★ 4.8</span></div>
         <div class="card-title">Sudoku</div>
-        <div class="card-desc">Uncover tiles and avoid mines! Three difficulty levels to challenge yourself.</div>
+        <div class="card-desc">Fill the grid with numbers 1-9. Logic puzzle with multiple difficulty levels.</div>
         <div class="card-footer">
-          <span style="font-size:12px;color:var(--muted)">3.2K playing</span>
+          <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="sudoku">3200</span> playing</span>
           <a href="games/sudoku/sudoku.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
 
-    <div class="game-card">
+    <div class="game-card" data-category="skill">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#030508 0%,#1a0a3e 40%,#00cfff 70%,#00ff88 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">⌨️</div>
@@ -642,13 +648,13 @@ footer {
         <div class="card-title">Typing Speed</div>
         <div class="card-desc">Test your typing speed and accuracy! Neon edition with multiple time modes.</div>
         <div class="card-footer">
-          <span style="font-size:12px;color:var(--muted)">1.9K playing</span>
+          <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="typing">1900</span> playing</span>
           <a href="games/typing-speed/typing-speed.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
 
-    <div class="game-card">
+    <div class="game-card" data-category="action">
       <div class="card-thumb">
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a00 0%,#3a1a0a 40%,#ffd700 70%,#ff9f43 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🦔</div>
@@ -660,11 +666,30 @@ footer {
         <div class="card-title">Whack-a-Mole</div>
         <div class="card-desc">Click the moles before they hide! Three difficulty levels and custom cursor.</div>
         <div class="card-footer">
-          <span style="font-size:12px;color:var(--muted)">2.3K playing</span>
+          <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="whack">2300</span> playing</span>
           <a href="games/whack-a-mole/whack-a-mole.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
+
+    <div class="game-card" data-category="action">
+      <div class="card-thumb">
+        <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a00 0%,#3a1a0a 40%,#ffd700 70%,#ff9f43 100%);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🏎️</div>
+        <div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
+        <span class="card-badge badge-hot">🔥 New</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="card-category">Action</span><span class="card-rating">★ 4.8</span></div>
+        <div class="card-title">Apex-Velocity-v2</div>
+        <div class="card-desc">Click the moles before they hide! Three difficulty levels and custom cursor.</div>
+        <div class="card-footer">
+          <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="whack">2300</span> playing</span>
+          <a href="games/apex-velocity/apex-velocity-v2.html" class="play-now">Play Now →</a>
+        </div>
+      </div>
+    </div>
+
   </div><!-- end .games-grid -->
 </section>
 
@@ -766,10 +791,10 @@ footer {
   <div class="footer-copy">© 2025 PlaySphere. All rights reserved.</div>
 </footer>
 
+<script src="app.js"></script>
 <script>
-  // Custom cursor
   const cursor = document.getElementById('cursor');
-  const ring   = document.getElementById('cursorRing');
+  const ring = document.getElementById('cursorRing');
   let mx=0, my=0, rx=0, ry=0;
 
   document.addEventListener('mousemove', e => {
@@ -786,15 +811,14 @@ footer {
   document.querySelectorAll('button, a, .game-card, .trending-item, .tab').forEach(el => {
     el.addEventListener('mouseenter', () => {
       cursor.style.width='16px'; cursor.style.height='16px';
-      ring.style.width='52px';   ring.style.height='52px';
+      ring.style.width='52px'; ring.style.height='52px';
     });
     el.addEventListener('mouseleave', () => {
       cursor.style.width='10px'; cursor.style.height='10px';
-      ring.style.width='36px';   ring.style.height='36px';
+      ring.style.width='36px'; ring.style.height='36px';
     });
   });
 
-  // Scroll reveal
   const observer = new IntersectionObserver(entries => {
     entries.forEach((e, i) => {
       if(e.isIntersecting){
@@ -804,14 +828,6 @@ footer {
     });
   }, { threshold: 0.1 });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-  // Category tabs
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', function(){
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      this.classList.add('active');
-    });
-  });
 </script>
 </body>
 </html>

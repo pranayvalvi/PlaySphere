@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Animation Studio</title>
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+background:#111;
+color:white;
+}
+
+canvas{
+background:white;
+border:3px solid #444;
+touch-action:none;
+}
+
+.toolbar{
+margin:10px;
+}
+
+button{
+padding:8px 12px;
+margin:4px;
+border:none;
+background:#4CAF50;
+color:white;
+cursor:pointer;
+border-radius:5px;
+}
+
+button:hover{
+background:#45a049;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>🎬 Animation Studio</h2>
+
+<div class="toolbar">
+
+<button onclick="prevFrame()">Prev Frame</button>
+<button onclick="nextFrame()">Next Frame</button>
+<button onclick="newFrame()">New Frame</button>
+<button onclick="playAnimation()">Play</button>
+<button onclick="exportGIF()">Save GIF</button>
+
+Color
+<input type="color" id="color">
+
+Size
+<input type="range" id="size" min="1" max="20" value="4">
+
+</div>
+
+<canvas id="canvas" width="600" height="400"></canvas>
+
+<p>Frame: <span id="frameNum">1</span></p>
+
+<script src="https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.js"></script>
+
+<script>
+
+const canvas = document.getElementById("canvas")
+const ctx = canvas.getContext("2d")
+
+let drawing=false
+
+let frames=[]
+let currentFrame=0
+
+frames.push(canvas.toDataURL())
+
+function saveFrame(){
+frames[currentFrame]=canvas.toDataURL()
+}
+
+function loadFrame(index){
+
+let img=new Image()
+img.src=frames[index]
+
+img.onload=()=>{
+ctx.clearRect(0,0,canvas.width,canvas.height)
+ctx.drawImage(img,0,0)
+}
+
+document.getElementById("frameNum").innerText=index+1
+}
+
+function newFrame(){
+
+saveFrame()
+
+frames.push(canvas.toDataURL())
+
+currentFrame=frames.length-1
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+document.getElementById("frameNum").innerText=currentFrame+1
+}
+
+function nextFrame(){
+
+saveFrame()
+
+if(currentFrame<frames.length-1){
+currentFrame++
+loadFrame(currentFrame)
+}
+
+}
+
+function prevFrame(){
+
+saveFrame()
+
+if(currentFrame>0){
+currentFrame--
+loadFrame(currentFrame)
+}
+
+}
+
+canvas.addEventListener("mousedown",start)
+canvas.addEventListener("mouseup",stop)
+canvas.addEventListener("mousemove",draw)
+
+canvas.addEventListener("touchstart",start)
+canvas.addEventListener("touchend",stop)
+canvas.addEventListener("touchmove",draw)
+
+function start(e){
+drawing=true
+}
+
+function stop(){
+drawing=false
+ctx.beginPath()
+}
+
+function draw(e){
+
+if(!drawing) return
+
+let rect=canvas.getBoundingClientRect()
+
+let x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left
+let y=(e.touches?e.touches[0].clientY:e.clientY)-rect.top
+
+ctx.lineWidth=document.getElementById("size").value
+ctx.strokeStyle=document.getElementById("color").value
+ctx.lineCap="round"
+
+ctx.lineTo(x,y)
+ctx.stroke()
+
+ctx.beginPath()
+ctx.moveTo(x,y)
+
+}
+
+function playAnimation(){
+
+saveFrame()
+
+let i=0
+
+let img=new Image()
+
+let interval=setInterval(()=>{
+
+img.src=frames[i]
+
+img.onload=()=>{
+ctx.clearRect(0,0,canvas.width,canvas.height)
+ctx.drawImage(img,0,0)
+}
+
+i++
+
+if(i>=frames.length) i=0
+
+},200)
+
+}
+
+function exportGIF(){
+
+saveFrame()
+
+let gif=new GIF({
+workers:2,
+quality:10,
+width:600,
+height:400
+})
+
+frames.forEach(frame=>{
+
+let img=new Image()
+img.src=frame
+
+gif.addFrame(img,{delay:200})
+
+})
+
+gif.on("finished",function(blob){
+
+let link=document.createElement("a")
+link.href=URL.createObjectURL(blob)
+link.download="animation.gif"
+link.click()
+
+})
+
+gif.render()
+
+}
+
+</script>
+
+</body>
+</html>
