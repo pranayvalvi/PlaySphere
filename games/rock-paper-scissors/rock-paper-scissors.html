@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rock Paper Scissors — Neon Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#030508;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Rajdhani',sans-serif;color:#fff;overflow:hidden;user-select:none;}
+.title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;letter-spacing:4px;background:linear-gradient(90deg,#ff6b9d,#a855f7,#00cfff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
+.sub{font-size:12px;color:rgba(255,255,255,0.25);letter-spacing:0.08em;margin-bottom:20px;}
+
+.scoreboard{display:flex;gap:0;margin-bottom:24px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.07);}
+.score-col{padding:14px 36px;text-align:center;background:rgba(255,255,255,0.03);}
+.score-col.you{border-right:1px solid rgba(255,255,255,0.07);}
+.score-col.cpu{border-left:1px solid rgba(255,255,255,0.07);}
+.score-col.draw{border-left:1px solid rgba(255,255,255,0.07);}
+.score-label{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:4px;}
+.score-val{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;}
+
+.arena{display:flex;align-items:center;gap:40px;margin-bottom:32px;}
+.hand-box{width:160px;height:160px;border-radius:22px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-size:88px;position:relative;transition:all 0.3s;}
+.hand-box.you-hand{border-color:rgba(0,207,255,0.2);}
+.hand-box.cpu-hand{border-color:rgba(255,107,157,0.2);}
+.vs-text{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:rgba(255,255,255,0.2);}
+.hand-box.win{animation:winPulse 0.5s ease;border-color:rgba(0,255,136,0.5);box-shadow:0 0 30px rgba(0,255,136,0.2);}
+.hand-box.lose{animation:losePulse 0.5s ease;opacity:0.5;}
+@keyframes winPulse{0%{transform:scale(1);}50%{transform:scale(1.12);}100%{transform:scale(1);}}
+@keyframes losePulse{0%{transform:scale(1);}50%{transform:scale(0.9);}100%{transform:scale(1);}}
+
+.result-text{height:44px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;margin-bottom:24px;letter-spacing:2px;}
+
+.choices{display:flex;gap:16px;margin-bottom:24px;}
+.choice{width:100px;height:100px;border-radius:18px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);font-size:44px;}
+.choice:hover{transform:translateY(-6px) scale(1.08);box-shadow:0 8px 30px rgba(0,0,0,0.4);}
+.choice.rock:hover{border-color:rgba(255,159,67,0.5);box-shadow:0 8px 30px rgba(255,159,67,0.2);}
+.choice.paper:hover{border-color:rgba(0,207,255,0.5);box-shadow:0 8px 30px rgba(0,207,255,0.2);}
+.choice.scissors:hover{border-color:rgba(168,85,247,0.5);box-shadow:0 8px 30px rgba(168,85,247,0.2);}
+.choice .choice-label{font-size:10px;font-family:'Orbitron',sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:4px;}
+.choice:active{transform:scale(0.95);}
+
+.rounds-pip{display:flex;gap:6px;margin-bottom:16px;}
+.pip{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);transition:all 0.3s;}
+.pip.you{background:#00cfff;box-shadow:0 0 8px rgba(0,207,255,0.5);}
+.pip.cpu{background:#ff6b9d;box-shadow:0 0 8px rgba(255,107,157,0.5);}
+
+.reset-btn{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;color:rgba(255,255,255,0.4);background:transparent;border:1px solid rgba(255,255,255,0.1);padding:7px 20px;border-radius:50px;cursor:pointer;transition:all 0.2s;}
+.reset-btn:hover{color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.2);}
+</style>
+</head>
+<body>
+<div class="title">✊ ROCK PAPER SCISSORS</div>
+<div class="sub">First to 5 wins the match!</div>
+
+<div class="scoreboard">
+  <div class="score-col you"><div class="score-label">You</div><div class="score-val" id="youSc" style="color:#00cfff;text-shadow:0 0 14px rgba(0,207,255,0.5)">0</div></div>
+  <div class="score-col draw"><div class="score-label">Draw</div><div class="score-val" id="drawSc" style="color:rgba(255,255,255,0.3)">0</div></div>
+  <div class="score-col cpu"><div class="score-label">CPU</div><div class="score-val" id="cpuSc" style="color:#ff6b9d;text-shadow:0 0 14px rgba(255,107,157,0.5)">0</div></div>
+</div>
+
+<div class="rounds-pip" id="pips"></div>
+
+<div class="arena">
+  <div style="text-align:center">
+    <div class="hand-box you-hand" id="youHand">🤔</div>
+    <div style="height:28px;display:flex;align-items:center;justify-content:center;margin-top:10px;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.25);">YOU</div>
+  </div>
+  <div class="vs-text">VS</div>
+  <div style="text-align:center">
+    <div class="hand-box cpu-hand" id="cpuHand">🤔</div>
+    <div style="height:28px;display:flex;align-items:center;justify-content:center;margin-top:10px;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.25);">CPU</div>
+  </div>
+</div>
+
+<div class="result-text" id="resultText" style="color:rgba(255,255,255,0.2)">Choose your move!</div>
+
+<div class="choices">
+  <div class="choice rock" onclick="play('rock')"><span>🪨</span><span class="choice-label">Rock</span></div>
+  <div class="choice paper" onclick="play('paper')"><span>📄</span><span class="choice-label">Paper</span></div>
+  <div class="choice scissors" onclick="play('scissors')"><span>✂️</span><span class="choice-label">Scissors</span></div>
+</div>
+
+<button class="reset-btn" onclick="reset()">↺ Reset Score</button>
+
+<script>
+const EMOJIS={rock:'🪨',paper:'📄',scissors:'✂️'};
+const BEATS={rock:'scissors',paper:'rock',scissors:'paper'};
+let youScore=0,cpuScore=0,drawScore=0,locked=false,roundResults=[];
+const WIN_TO=5;
+
+function buildPips(){
+  const el=document.getElementById('pips');el.innerHTML='';
+  for(let i=0;i<WIN_TO;i++){
+    const p=document.createElement('div');p.className='pip';
+    const r=roundResults[i];
+    if(r==='you')p.classList.add('you');
+    else if(r==='cpu')p.classList.add('cpu');
+    el.appendChild(p);
+  }
+}
+
+function play(choice){
+  if(locked)return;
+  locked=true;
+  document.getElementById('resultText').textContent='...';
+  document.getElementById('resultText').style.color='rgba(255,255,255,0.4)';
+  let shakes=0;
+  const youH=document.getElementById('youHand'),cpuH=document.getElementById('cpuHand');
+  youH.className='hand-box you-hand';cpuH.className='hand-box cpu-hand';
+  youH.textContent='✊';cpuH.textContent='✊';
+  const interval=setInterval(()=>{
+    shakes++;
+    youH.style.transform=`translateY(${shakes%2?-8:0}px)`;
+    cpuH.style.transform=`translateY(${shakes%2?-8:0}px)`;
+    if(shakes>=5){
+      clearInterval(interval);
+      youH.style.transform='';cpuH.style.transform='';
+      reveal(choice);
+    }
+  },100);
+}
+
+function reveal(youChoice){
+  const cpuChoice=['rock','paper','scissors'][Math.floor(Math.random()*3)];
+  const youH=document.getElementById('youHand'),cpuH=document.getElementById('cpuHand');
+  youH.textContent=EMOJIS[youChoice];cpuH.textContent=EMOJIS[cpuChoice];
+
+  let result,color,txt;
+  if(youChoice===cpuChoice){result='draw';color='rgba(255,255,255,0.4)';txt='DRAW!';}
+  else if(BEATS[youChoice]===cpuChoice){result='you';color='#00ff88';txt='YOU WIN! 🎉';}
+  else{result='cpu';color='#ff4466';txt='CPU WINS!';}
+
+  document.getElementById('resultText').textContent=txt;
+  document.getElementById('resultText').style.color=color;
+  document.getElementById('resultText').style.textShadow=`0 0 20px ${color}`;
+
+  if(result==='you'){youScore++;youH.classList.add('win');cpuH.classList.add('lose');}
+  else if(result==='cpu'){cpuScore++;cpuH.classList.add('win');youH.classList.add('lose');}
+  else drawScore++;
+
+  roundResults.push(result);
+  document.getElementById('youSc').textContent=youScore;
+  document.getElementById('cpuSc').textContent=cpuScore;
+  document.getElementById('drawSc').textContent=drawScore;
+  buildPips();
+
+  setTimeout(()=>{
+    if(youScore>=WIN_TO||cpuScore>=WIN_TO){
+      showMatchResult();
+    } else {
+      locked=false;
+    }
+  },1200);
+}
+
+function showMatchResult(){
+  const won=youScore>=WIN_TO;
+  const el=document.getElementById('resultText');
+  el.style.fontSize='28px';
+  el.textContent=won?'🏆 YOU WIN THE MATCH!':'💀 CPU WINS THE MATCH!';
+  el.style.color=won?'#ffd700':'#ff4466';
+  el.style.textShadow=`0 0 30px ${won?'#ffd700':'#ff4466'}`;
+  setTimeout(()=>{
+    reset(false);
+    el.style.fontSize='22px';
+    el.textContent='Choose your move!';
+    el.style.color='rgba(255,255,255,0.2)';
+    el.style.textShadow='';
+  },2500);
+}
+
+function reset(full=true){
+  if(full){youScore=0;cpuScore=0;drawScore=0;}
+  roundResults=[];locked=false;
+  document.getElementById('youHand').textContent='🤔';
+  document.getElementById('cpuHand').textContent='🤔';
+  document.getElementById('youHand').className='hand-box you-hand';
+  document.getElementById('cpuHand').className='hand-box cpu-hand';
+  if(full){
+    document.getElementById('youSc').textContent=0;
+    document.getElementById('cpuSc').textContent=0;
+    document.getElementById('drawSc').textContent=0;
+    document.getElementById('resultText').textContent='Choose your move!';
+    document.getElementById('resultText').style.color='rgba(255,255,255,0.2)';
+    document.getElementById('resultText').style.textShadow='';
+  }
+  buildPips();
+}
+
+buildPips();
+</script>
+</body>
+</html>

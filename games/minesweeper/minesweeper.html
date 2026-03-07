@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minesweeper — Neon Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#030508;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Rajdhani',sans-serif;color:#fff;user-select:none;}
+.title{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;letter-spacing:6px;background:linear-gradient(90deg,#ff4466,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;}
+.hud{display:flex;gap:16px;margin-bottom:10px;align-items:center;}
+.hud-pill{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:7px 18px;text-align:center;}
+.hud-label{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.3);}
+.hud-val{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;}
+.diff-row{display:flex;gap:8px;margin-bottom:10px;}
+.diff-btn{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;padding:6px 16px;border-radius:50px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.35);cursor:pointer;transition:all 0.2s;}
+.diff-btn.active{background:rgba(255,68,102,0.15);border-color:rgba(255,68,102,0.4);color:#ff6b9d;}
+.board{display:inline-grid;gap:3px;padding:14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,68,102,0.1);border-radius:18px;}
+.cell{width:36px;height:36px;border-radius:7px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.12s;position:relative;}
+.cell:hover:not(.revealed):not(.exploded){background:rgba(255,255,255,0.1);border-color:rgba(255,68,102,0.3);transform:scale(1.06);}
+.cell.revealed{background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.04);cursor:default;}
+.cell.flagged{background:rgba(255,68,102,0.1);border-color:rgba(255,68,102,0.3);}
+.cell.exploded{background:rgba(255,68,102,0.25);border-color:#ff4466;animation:explode 0.4s ease;}
+.cell.safe-reveal{animation:safeReveal 0.25s ease;}
+.cell.won-glow{animation:wonGlow 0.5s ease forwards;}
+@keyframes explode{0%{transform:scale(1.4);}100%{transform:scale(1);}}
+@keyframes safeReveal{0%{transform:scale(0.8);opacity:0;}100%{transform:scale(1);opacity:1;}}
+@keyframes wonGlow{to{box-shadow:0 0 12px rgba(0,255,136,0.6);border-color:#00ff88;background:rgba(0,255,136,0.1);}}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(3,5,8,0.9);backdrop-filter:blur(14px);z-index:100;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.overlay.show{opacity:1;pointer-events:all;}
+.ov-title{font-family:'Orbitron',sans-serif;font-size:36px;font-weight:900;margin-bottom:8px;}
+.ov-score{font-family:'Orbitron',sans-serif;font-size:48px;font-weight:900;margin-bottom:6px;}
+.ov-sub{font-size:14px;color:rgba(255,255,255,0.4);margin-bottom:28px;}
+.btn{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.15em;color:#030508;background:linear-gradient(135deg,#ff4466,#a855f7);border:none;padding:12px 40px;border-radius:50px;cursor:pointer;transition:all 0.25s;box-shadow:0 0 25px rgba(255,68,102,0.3);}
+.btn:hover{transform:translateY(-2px);}
+</style>
+</head>
+<body>
+<div class="title">💣 MINESWEEPER</div>
+<div class="diff-row">
+  <button class="diff-btn active" onclick="setDiff('easy')">Easy 9×9</button>
+  <button class="diff-btn" onclick="setDiff('medium')">Medium 14×9</button>
+  <button class="diff-btn" onclick="setDiff('hard')">Hard 18×12</button>
+</div>
+<div class="hud">
+  <div class="hud-pill"><div class="hud-label">💣 Left</div><div class="hud-val" id="minesLeft" style="color:#ff4466;text-shadow:0 0 10px rgba(255,68,102,0.5)">0</div></div>
+  <div class="hud-pill"><div class="hud-label">⏱ Time</div><div class="hud-val" id="timer" style="color:#00cfff;text-shadow:0 0 10px rgba(0,207,255,0.5)">0</div></div>
+  <div class="hud-pill"><div class="hud-label">🏆 Best</div><div class="hud-val" id="best" style="color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,0.5)">—</div></div>
+  <button class="btn" onclick="newGame()" style="padding:8px 20px;font-size:10px;">NEW</button>
+</div>
+<div class="board" id="board"></div>
+
+<div class="overlay" id="winOv">
+  <div class="ov-title" style="color:#00ff88;text-shadow:0 0 30px rgba(0,255,136,0.6);">CLEARED! 🎉</div>
+  <div class="ov-score" id="winTime" style="color:#00cfff">0s</div>
+  <div class="ov-sub" id="winBest"></div>
+  <button class="btn" style="background:linear-gradient(135deg,#00ff88,#00cfff);color:#030508" onclick="newGame()">PLAY AGAIN</button>
+</div>
+<div class="overlay" id="loseOv">
+  <div class="ov-title" style="color:#ff4466;text-shadow:0 0 30px rgba(255,68,102,0.6);">BOOM! 💥</div>
+  <div class="ov-sub">You hit a mine. Better luck next time!</div>
+  <button class="btn" onclick="newGame()">TRY AGAIN</button>
+</div>
+
+<script>
+const DIFFS={easy:{cols:9,rows:9,mines:10},medium:{cols:14,rows:9,mines:20},hard:{cols:18,rows:12,mines:40}};
+const NUM_COLORS=['','#00cfff','#00ff88','#ff4466','#a855f7','#ff9f43','#00d4aa','#ff6b9d','#ffffff'];
+let diff='easy',grid,cols,rows,mines,revealed,flagged,mineSet,gameOver,won,timerSec,timerInt,firstClick;
+
+function setDiff(d){
+  diff=d;document.querySelectorAll('.diff-btn').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase().startsWith(d)));
+  newGame();
+}
+
+function getBest(){return parseInt(localStorage.getItem('ms_'+diff)||'99999');}
+function saveBest(t){if(t<getBest())localStorage.setItem('ms_'+diff,t);}
+function showBest(){const b=getBest();document.getElementById('best').textContent=b<99999?b+'s':'—';}
+
+function newGame(){
+  document.getElementById('winOv').classList.remove('show');
+  document.getElementById('loseOv').classList.remove('show');
+  const cfg=DIFFS[diff];
+  cols=cfg.cols;rows=cfg.rows;mines=cfg.mines;
+  grid=Array(rows).fill(null).map(()=>Array(cols).fill(0));
+  revealed=Array(rows).fill(null).map(()=>Array(cols).fill(false));
+  flagged=Array(rows).fill(null).map(()=>Array(cols).fill(false));
+  mineSet=new Set();gameOver=false;won=false;firstClick=true;
+  clearInterval(timerInt);timerSec=0;
+  document.getElementById('timer').textContent=0;
+  document.getElementById('minesLeft').textContent=mines;
+  showBest();buildBoard();
+}
+
+function buildBoard(){
+  const b=document.getElementById('board');
+  b.style.gridTemplateColumns=`repeat(${cols},36px)`;
+  b.innerHTML='';
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const cell=document.createElement('div');cell.className='cell';
+    cell.dataset.r=r;cell.dataset.c=c;
+    cell.addEventListener('click',()=>click(r,c));
+    cell.addEventListener('contextmenu',e=>{e.preventDefault();flag(r,c);});
+    b.appendChild(cell);
+  }
+}
+
+function placeMines(safeR,safeC){
+  const safe=new Set();
+  for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+    const nr=safeR+dr,nc=safeC+dc;
+    if(nr>=0&&nr<rows&&nc>=0&&nc<cols)safe.add(nr*cols+nc);
+  }
+  while(mineSet.size<mines){
+    const pos=Math.floor(Math.random()*rows*cols);
+    if(!safe.has(pos))mineSet.add(pos);
+  }
+  mineSet.forEach(pos=>{const r=Math.floor(pos/cols),c=pos%cols;grid[r][c]=-1;});
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    if(grid[r][c]===-1)continue;
+    let n=0;
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&grid[nr][nc]===-1)n++;
+    }
+    grid[r][c]=n;
+  }
+}
+
+function click(r,c){
+  if(gameOver||flagged[r][c])return;
+  if(firstClick){
+    firstClick=false;
+    placeMines(r,c);
+    timerInt=setInterval(()=>{timerSec++;document.getElementById('timer').textContent=timerSec;},1000);
+  }
+  if(grid[r][c]===-1){boom(r,c);return;}
+  reveal(r,c);checkWin();
+}
+
+function reveal(r,c){
+  if(r<0||r>=rows||c<0||c>=cols||revealed[r][c]||flagged[r][c])return;
+  revealed[r][c]=true;
+  const cell=getCell(r,c);
+  cell.classList.add('revealed','safe-reveal');
+  if(grid[r][c]>0){
+    cell.textContent=grid[r][c];cell.style.color=NUM_COLORS[grid[r][c]];
+    cell.style.textShadow=`0 0 10px ${NUM_COLORS[grid[r][c]]}`;
+  } else if(grid[r][c]===0){
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++)reveal(r+dr,c+dc);
+  }
+}
+
+function flag(r,c){
+  if(gameOver||revealed[r][c])return;
+  flagged[r][c]=!flagged[r][c];
+  const cell=getCell(r,c);
+  cell.classList.toggle('flagged',flagged[r][c]);
+  cell.textContent=flagged[r][c]?'🚩':'';
+  const f=flagged.flat().filter(Boolean).length;
+  document.getElementById('minesLeft').textContent=mines-f;
+}
+
+function boom(r,c){
+  gameOver=true;clearInterval(timerInt);
+  mineSet.forEach((pos,i)=>{
+    const mr=Math.floor(pos/cols),mc=pos%cols;
+    setTimeout(()=>{
+      const cell=getCell(mr,mc);
+      cell.classList.add('revealed','exploded');
+      cell.textContent='💣';
+    },i*30+(r*cols+c===pos?0:200));
+  });
+  setTimeout(()=>document.getElementById('loseOv').classList.add('show'),800);
+}
+
+function checkWin(){
+  const totalSafe=rows*cols-mines;
+  const revCount=revealed.flat().filter(Boolean).length;
+  if(revCount===totalSafe){
+    won=true;gameOver=true;clearInterval(timerInt);
+    saveBest(timerSec);
+    document.querySelectorAll('.cell.revealed').forEach((el,i)=>setTimeout(()=>el.classList.add('won-glow'),i*8));
+    document.getElementById('winTime').textContent=timerSec+'s';
+    const b=getBest();
+    document.getElementById('winBest').textContent=timerSec<=b?'🏆 New Best Time!':'Best: '+b+'s';
+    showBest();
+    setTimeout(()=>document.getElementById('winOv').classList.add('show'),600);
+  }
+}
+
+function getCell(r,c){return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);}
+
+newGame();
+</script>
+</body>
+</html>

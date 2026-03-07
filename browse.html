@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browse Games — PlaySphere</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080B14;
+  --surface: #0E1422;
+  --card: #111827;
+  --border: rgba(255,255,255,0.07);
+  --accent: #7C5CFC;
+  --accent2: #FF6B6B;
+  --accent3: #00D4AA;
+  --text: #F0F4FF;
+  --muted: #7B8DB0;
+  --gold: #FFB547;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+.container { max-width: 1280px; margin: 0 auto; padding: 0 20px; }
+
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 0 40px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(8,11,20,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-dot {
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--accent);
+}
+
+.nav-links {
+  display: flex;
+  gap: 4px;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 7px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  letter-spacing: 0.01em;
+}
+
+.nav-links a:hover, .nav-links a.active {
+  color: var(--text);
+  background: rgba(124,92,252,0.12);
+}
+
+.nav-links a.active { color: var(--accent); }
+
+.browse-container { padding: 120px 40px 60px; max-width: 1280px; margin: 0 auto; }
+
+.browse-header { margin-bottom: 60px; }
+
+.browse-title { 
+  font-family: 'Syne', sans-serif; 
+  font-size: 48px; 
+  font-weight: 800; 
+  margin-bottom: 16px; 
+}
+
+.browse-sub {
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.filter-row { 
+  display: flex; 
+  gap: 12px; 
+  flex-wrap: wrap; 
+  margin-bottom: 40px; 
+}
+
+.filter-btn { 
+  font-size: 13px; 
+  font-weight: 600; 
+  padding: 10px 20px; 
+  border-radius: 8px; 
+  border: 1px solid rgba(124,92,252,0.3); 
+  background: rgba(124,92,252,0.1); 
+  color: var(--text); 
+  cursor: pointer; 
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.filter-btn.active { 
+  background: rgba(124,92,252,0.25); 
+  border-color: rgba(124,92,252,0.6); 
+}
+
+.filter-btn:hover { 
+  background: rgba(124,92,252,0.2); 
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.game-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.game-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(124,92,252,0.35);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(124,92,252,0.15);
+}
+
+.game-card:hover .card-thumb-overlay { opacity: 1; }
+.game-card:hover .play-btn { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+.card-thumb {
+  aspect-ratio: 16/10;
+  position: relative;
+  overflow: hidden;
+}
+
+.thumb-gradient {
+  width: 100%; height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.card-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  opacity: 0;
+  transition: opacity 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-btn {
+  width: 52px; height: 52px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.7);
+  position: absolute;
+  top: 50%; left: 50%;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.play-btn svg { width: 20px; height: 20px; fill: var(--accent); margin-left: 3px; }
+
+.card-badge {
+  position: absolute;
+  top: 12px; right: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+
+.badge-hot { background: rgba(255,107,107,0.9); color: white; }
+.badge-new { background: rgba(0,212,170,0.9); color: #0A1A14; }
+.badge-top { background: rgba(255,181,71,0.9); color: #1A1000; }
+
+.card-body {
+  padding: 16px 18px 18px;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.card-category {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.card-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  font-weight: 300;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.play-now {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(124,92,252,0.1);
+  border: 1px solid rgba(124,92,252,0.25);
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.play-now:hover {
+  background: rgba(124,92,252,0.2);
+  border-color: rgba(124,92,252,0.4);
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 48px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.footer-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.footer-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: var(--text); }
+
+.footer-copy { font-size: 13px; color: var(--muted); }
+
+.search-bar {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 16px;
+  background: rgba(124,92,252,0.1);
+  border: 1px solid rgba(124,92,252,0.25);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  transition: all 0.2s;
+  margin-bottom: 20px;
+}
+
+.search-bar:focus {
+  outline: none;
+  background: rgba(124,92,252,0.15);
+  border-color: rgba(124,92,252,0.4);
+  box-shadow: 0 0 20px rgba(124,92,252,0.2);
+}
+
+.search-bar::placeholder { color: var(--muted); }
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="logo-dot"></div>
+    PlaySphere
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="browse.html" class="active">Browse</a></li>
+    <li><a href="trending.html">Trending</a></li>
+    <li><a href="about.html">About</a></li>
+  </ul>
+</nav>
+
+<div class="browse-container">
+<div class="browse-header">
+<h1 class="browse-title">Browse All Games</h1>
+<p class="browse-sub">Explore our complete collection of games</p>
+</div>
+
+<input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search games..." onkeyup="searchGames()">
+
+<div class="filter-row">
+<button class="filter-btn active" onclick="filterGames(this, 'all')">All Games</button>
+<button class="filter-btn" onclick="filterGames(this, 'arcade')">Arcade</button>
+<button class="filter-btn" onclick="filterGames(this, 'puzzle')">Puzzle</button>
+<button class="filter-btn" onclick="filterGames(this, 'action')">Action</button>
+<button class="filter-btn" onclick="filterGames(this, 'strategy')">Strategy</button>
+</div>
+
+<div class="games-grid" id="gamesGrid">
+<div class="game-card" data-category="arcade">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #1a0533 0%, #4c1d95 40%, #7c3aed 70%, #a855f7 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;">🐍</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-hot">🔥 Hot</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Arcade</span><span class="card-rating">★ 4.9</span></div><div class="card-title">Snake Classic</div><div class="card-desc">Grow your snake and beat your high score.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">3.2K playing</span><a href="games/snake/snake.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="strategy">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #1a0a00 0%, #7c2d12 40%, #ea580c 70%, #fb923c 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;">⭕</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-new">✨ New</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Strategy</span><span class="card-rating">★ 4.7</span></div><div class="card-title">Tic-Tac-Toe</div><div class="card-desc">Challenge our unbeatable AI.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">1.1K playing</span><a href="games/tic-tac-toe/tictactoe.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="puzzle">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #00111a 0%, #065f46 40%, #059669 70%, #34d399 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🃏</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-top">⭐ Top</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Puzzle</span><span class="card-rating">★ 4.8</span></div><div class="card-title">Memory Match</div><div class="card-desc">Flip cards and test your memory. Can you clear the board?</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">876 playing</span><a href="games/memory/memory.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="puzzle">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 40%, #3b82f6 70%, #60a5fa 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🎲</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-top">⭐ Top</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Board Game</span><span class="card-rating">★ 4.8</span></div><div class="card-title">Snakes & Ladders</div><div class="card-desc">Roll the dice and race to the top! Classic board game with smooth animations.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">654 playing</span><a href="games/snake-and-ladder/snakeandladder.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="action">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #030508 0%, #1a0a3e 40%, #00cfff 70%, #00ff88 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">⌨️</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-new">✨ New</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Skill</span><span class="card-rating">★ 4.9</span></div><div class="card-title">Typing Speed</div><div class="card-desc">Test your typing speed and accuracy! Neon edition with multiple time modes.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">1.9K playing</span><a href="games/typing-speed/typing-speed.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="action">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #1a0a00 0%, #3a1a0a 40%, #ffd700 70%, #ff9f43 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🦔</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-hot">🔥 Hot</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Action</span><span class="card-rating">★ 4.8</span></div><div class="card-title">Whack-a-Mole</div><div class="card-desc">Click the moles before they hide! Three difficulty levels and custom cursor.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">2.3K playing</span><a href="games/whack-a-mole/whack-a-mole.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="puzzle">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #1a0a2e 0%, #16213e 40%, #ffd700 70%, #ff9f43 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🔢</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-new">✨ New</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Puzzle</span><span class="card-rating">★ 4.9</span></div><div class="card-title">2048</div><div class="card-desc">Merge tiles to reach 2048! Strategic puzzle game with neon aesthetics.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">2.1K playing</span><a href="games/2048/2048.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="action">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #1a0a2e 0%, #7c2d12 40%, #ff4466 70%, #ff9f43 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🎯</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-hot">🔥 Hot</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Action</span><span class="card-rating">★ 4.8</span></div><div class="card-title">Aim Trainer</div><div class="card-desc">Test your reflexes! Click targets fast and track your reaction time.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">1.8K playing</span><a href="games/aim-trainer/aim-trainer.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="action">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #0f0a2e 0%, #1e0a3e 40%, #00cfff 70%, #a855f7 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">☄️</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-top">⭐ Top</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Action</span><span class="card-rating">★ 4.9</span></div><div class="card-title">Asteroids</div><div class="card-desc">Destroy asteroids and survive! Progressive levels with shield mechanics.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">2.4K playing</span><a href="games/asteroids/asteroids.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="action">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #0a1a2e 0%, #1a0a3e 40%, #00cfff 70%, #ff6b9d 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🏃</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-new">✨ New</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Action</span><span class="card-rating">★ 4.7</span></div><div class="card-title">Endless Runner</div><div class="card-desc">Jump and dodge obstacles! Collect coins and beat your high score.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">1.5K playing</span><a href="games/endless-runner/endless-runner.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="action">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #1a0a0a 0%, #3a1a0a 40%, #ffd700 70%, #ff9f43 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🐦</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-hot">🔥 Hot</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Action</span><span class="card-rating">★ 4.9</span></div><div class="card-title">Flappy Bird</div><div class="card-desc">Tap to flap through the pipes! Classic arcade challenge with neon style.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">3.8K playing</span><a href="games/flappy-bird/flappy-bird.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="puzzle">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #1a0a2e 0%, #3a0a2e 40%, #ff4466 70%, #a855f7 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">💣</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-top">⭐ Top</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Puzzle</span><span class="card-rating">★ 4.8</span></div><div class="card-title">Minesweeper</div><div class="card-desc">Uncover tiles and avoid mines! Three difficulty levels to challenge yourself.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">2.2K playing</span><a href="games/minesweeper/minesweeper.html" class="play-now">Play Now →</a></div></div>
+</div>
+
+<div class="game-card" data-category="puzzle">
+<div class="card-thumb"><div class="thumb-gradient" style="background: linear-gradient(135deg, #1a0a2e 0%, #3a0a2e 40%, #ff4466 70%, #a855f7 100%);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🔢</div><div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div><span class="card-badge badge-top">⭐ Top</span></div>
+<div class="card-body"><div class="card-meta"><span class="card-category">Puzzle</span><span class="card-rating">★ 4.8</span></div><div class="card-title">Sudoku</div><div class="card-desc">Fill the grid with numbers! Three difficulty levels to challenge yourself.</div><div class="card-footer"><span style="font-size:12px;color:var(--muted)">3.2K playing</span><a href="games/sudoku/sudoku.html" class="play-now">Play Now →</a></div></div>
+</div>
+</div>
+</div>
+
+<footer>
+  <div class="footer-logo">PlaySphere</div>
+  <ul class="footer-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="browse.html">Browse</a></li>
+    <li><a href="trending.html">Trending</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="#">Privacy</a></li>
+  </ul>
+  <div class="footer-copy">© 2025 PlaySphere. All rights reserved.</div>
+</footer>
+
+<script>
+let currentCategory = 'all';
+
+function filterGames(btn, category) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentCategory = category;
+  applyFilters();
+}
+
+function searchGames() {
+  applyFilters();
+}
+
+function applyFilters() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const cards = document.querySelectorAll('.game-card');
+  
+  cards.forEach(card => {
+    const title = card.querySelector('.card-title').textContent.toLowerCase();
+    const matchesSearch = title.includes(searchTerm);
+    const matchesCategory = currentCategory === 'all' || card.dataset.category === currentCategory;
+    
+    card.style.display = (matchesSearch && matchesCategory) ? 'block' : 'none';
+  });
+}
+</script>
+
+</body>
+</html>

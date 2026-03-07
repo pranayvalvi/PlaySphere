@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snakes & Ladders — Neon Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #030508;
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+}
+
+#bgCanvas { position:fixed; inset:0; z-index:0; }
+
+.layout {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+/* ── SIDE PANEL ── */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 200px;
+}
+
+.panel-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-align: center;
+  background: linear-gradient(135deg, #00ff88, #00cfff, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 12px rgba(0,255,136,0.4));
+}
+
+.player-card {
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.03);
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.player-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 2px 0 0 2px;
+  transition: all 0.3s;
+}
+.player-card.p1::before { background: #00cfff; box-shadow: 0 0 12px #00cfff; }
+.player-card.p2::before { background: #ff6b9d; box-shadow: 0 0 12px #ff6b9d; }
+.player-card.active {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.15);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  transform: translateX(4px);
+}
+.player-card.active.p1 { border-color: rgba(0,207,255,0.3); box-shadow: 0 0 20px rgba(0,207,255,0.1); }
+.player-card.active.p2 { border-color: rgba(255,107,157,0.3); box-shadow: 0 0 20px rgba(255,107,157,0.1); }
+
+.player-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.player-token {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  flex-shrink: 0;
+}
+.p1 .player-token { background: rgba(0,207,255,0.2); border: 2px solid #00cfff; color: #00cfff; box-shadow: 0 0 10px rgba(0,207,255,0.3); }
+.p2 .player-token { background: rgba(255,107,157,0.2); border: 2px solid #ff6b9d; color: #ff6b9d; box-shadow: 0 0 10px rgba(255,107,157,0.3); }
+.player-name { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; }
+.p1 .player-name { color: #00cfff; }
+.p2 .player-name { color: #ff6b9d; }
+
+.player-pos-row { display:flex; justify-content:space-between; align-items:center; }
+.pos-label { font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.3); }
+.pos-value { font-family:'Orbitron',sans-serif; font-size:20px; font-weight:900; }
+.p1 .pos-value { color:#00cfff; text-shadow:0 0 15px rgba(0,207,255,0.5); }
+.p2 .pos-value { color:#ff6b9d; text-shadow:0 0 15px rgba(255,107,157,0.5); }
+
+.turn-badge {
+  display: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 6px;
+  animation: badgePulse 1.2s ease-in-out infinite;
+}
+@keyframes badgePulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+.player-card.active .turn-badge { display: inline-block; }
+.p1 .turn-badge { background: rgba(0,207,255,0.15); color:#00cfff; border:1px solid rgba(0,207,255,0.3); }
+.p2 .turn-badge { background: rgba(255,107,157,0.15); color:#ff6b9d; border:1px solid rgba(255,107,157,0.3); }
+
+/* Dice */
+.dice-section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+}
+.dice-face {
+  width: 64px; height: 64px;
+  margin: 0 auto 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  transition: transform 0.15s;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.dice-face:hover { transform: scale(1.1); }
+.dice-face.rolling { animation: rollAnim 0.5s ease; }
+@keyframes rollAnim {
+  0%,100%{transform:scale(1) rotate(0deg);}
+  25%{transform:scale(1.2) rotate(-15deg);}
+  75%{transform:scale(0.9) rotate(15deg);}
+}
+
+.roll-btn {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #030508;
+  background: linear-gradient(135deg, #00ff88, #00cfff);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.25s;
+  width: 100%;
+  box-shadow: 0 0 20px rgba(0,255,136,0.25);
+}
+.roll-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 0 35px rgba(0,255,136,0.45); }
+.roll-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+
+/* Status */
+.status-box {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  color: rgba(255,255,255,0.5);
+  min-height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1.4;
+}
+
+/* Legend */
+.legend { display:flex; flex-direction:column; gap:6px; }
+.legend-item { display:flex; align-items:center; gap:8px; font-size:12px; color:rgba(255,255,255,0.4); }
+.legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+.reset-btn {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #030508;
+  background: linear-gradient(135deg, #a855f7, #ff6b9d);
+  border: none;
+  padding: 10px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.25s;
+  width: 100%;
+  box-shadow: 0 0 18px rgba(168,85,247,0.25);
+}
+.reset-btn:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(168,85,247,0.45); }
+
+/* ── BOARD ── */
+.board-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+#boardCanvas {
+  display: block;
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+
+<div class="layout">
+  <!-- LEFT PANEL -->
+  <div class="side-panel">
+    <div class="panel-title">🐍S&L</div>
+
+    <div class="player-card p1 active" id="card1">
+      <div class="player-header">
+        <div class="player-token">P1</div>
+        <div class="player-name">PLAYER 1</div>
+      </div>
+      <div class="player-pos-row">
+        <span class="pos-label">Position</span>
+        <span class="pos-value" id="pos1">0</span>
+      </div>
+      <div class="turn-badge">YOUR TURN</div>
+    </div>
+
+    <div class="player-card p2" id="card2">
+      <div class="player-header">
+        <div class="player-token">P2</div>
+        <div class="player-name">PLAYER 2</div>
+      </div>
+      <div class="player-pos-row">
+        <span class="pos-label">Position</span>
+        <span class="pos-value" id="pos2">0</span>
+      </div>
+      <div class="turn-badge">YOUR TURN</div>
+    </div>
+
+    <div class="dice-section">
+      <div class="dice-face" id="diceFace" onclick="rollDice()">🎲</div>
+      <button class="roll-btn" id="rollBtn" onclick="rollDice()">Roll Dice</button>
+    </div>
+
+    <div class="status-box" id="statusBox">Player 1's turn — Roll the dice!</div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#ff4466;box-shadow:0 0 6px #ff4466"></div>Snake (goes down)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00ff88;box-shadow:0 0 6px #00ff88"></div>Ladder (goes up)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00cfff;box-shadow:0 0 6px #00cfff"></div>Player 1</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff6b9d;box-shadow:0 0 6px #ff6b9d"></div>Player 2</div>
+    </div>
+
+    <button class="reset-btn" onclick="resetGame()">↺ New Game</button>
+  </div>
+
+  <!-- BOARD -->
+  <div class="board-wrapper">
+    <canvas id="boardCanvas" width="520" height="520"></canvas>
+  </div>
+</div>
+
+<script>
+// ── BG ────────────────────────────────────────────────────────────
+const bgC = document.getElementById('bgCanvas');
+const bgX = bgC.getContext('2d');
+bgC.width = window.innerWidth; bgC.height = window.innerHeight;
+const stars = Array.from({length:80},()=>({
+  x:Math.random()*bgC.width, y:Math.random()*bgC.height,
+  r:Math.random()*1.2+0.2, a:Math.random()*Math.PI*2,
+  col:['rgba(0,207,255,','rgba(168,85,247,','rgba(0,255,136,'][Math.floor(Math.random()*3)]
+}));
+(function animBg(){
+  bgX.fillStyle='rgba(3,5,8,0.3)';
+  bgX.fillRect(0,0,bgC.width,bgC.height);
+  stars.forEach(s=>{
+    s.a+=0.015; s.y+=0.15;
+    if(s.y>bgC.height){s.y=0;s.x=Math.random()*bgC.width;}
+    bgX.beginPath(); bgX.arc(s.x,s.y,s.r,0,Math.PI*2);
+    bgX.fillStyle=s.col+(0.1+Math.sin(s.a)*0.1)+')'; bgX.fill();
+  });
+  requestAnimationFrame(animBg);
+})();
+
+// ── CONSTANTS ─────────────────────────────────────────────────────
+const CELL = 52;
+const PAD  = 0;
+const COLS = 10;
+const ROWS = 10;
+const W    = COLS * CELL;
+const H    = ROWS * CELL;
+
+// Snakes: head -> tail (head > tail, goes DOWN)
+const SNAKES = {
+  99: 21, 89: 53, 76: 58, 66: 45, 54: 31, 43: 18, 40: 3
+};
+// Ladders: bottom -> top (bottom < top, goes UP)
+const LADDERS = {
+  4: 56, 9: 31, 20: 38, 28: 84, 40: 59, 51: 67, 63: 81, 71: 91
+};
+
+const DICE_FACES = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
+
+// ── BOARD CANVAS ──────────────────────────────────────────────────
+const bc    = document.getElementById('boardCanvas');
+const bctx  = bc.getContext('2d');
+
+// Convert square number (1–100) to pixel center {x,y}
+function squareToXY(n) {
+  // Row 0 = bottom (squares 1-10), row 9 = top (91-100)
+  // Each row alternates direction
+  const row = Math.floor((n - 1) / COLS);       // 0=bottom … 9=top
+  const col_in_row = (n - 1) % COLS;
+  const col = (row % 2 === 0) ? col_in_row : (COLS - 1 - col_in_row);
+  const px  = col * CELL + CELL / 2;
+  const py  = (ROWS - 1 - row) * CELL + CELL / 2;
+  return { x: px, y: py };
+}
+
+function squareToTopLeft(n) {
+  const p = squareToXY(n);
+  return { x: p.x - CELL/2, y: p.y - CELL/2 };
+}
+
+// ── DRAW BOARD ────────────────────────────────────────────────────
+function drawBoard() {
+  bctx.clearRect(0, 0, W, H);
+
+  // Background
+  const bg = bctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#06091a');
+  bg.addColorStop(1,'#020408');
+  bctx.fillStyle = bg;
+  bctx.fillRect(0, 0, W, H);
+
+  // Cells
+  for(let n = 1; n <= 100; n++) {
+    const { x, y } = squareToXY(n);
+    const row = Math.floor((n-1)/COLS);
+
+    // Cell bg — alternate checkerboard-ish
+    const isDark = (Math.floor((n-1)/COLS) + ((n-1)%COLS)) % 2 === 0;
+    bctx.fillStyle = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.015)';
+    bctx.fillRect(x - CELL/2 + 1, y - CELL/2 + 1, CELL - 2, CELL - 2);
+
+    // Special highlight for snakes and ladders
+    if(SNAKES[n]) {
+      bctx.fillStyle = 'rgba(255,68,102,0.12)';
+      bctx.fillRect(x - CELL/2 + 1, y - CELL/2 + 1, CELL - 2, CELL - 2);
+    }
+    if(LADDERS[n]) {
+      bctx.fillStyle = 'rgba(0,255,136,0.1)';
+      bctx.fillRect(x - CELL/2 + 1, y - CELL/2 + 1, CELL - 2, CELL - 2);
+    }
+    if(Object.values(SNAKES).includes(n)) {
+      bctx.fillStyle = 'rgba(255,68,102,0.06)';
+      bctx.fillRect(x - CELL/2 + 1, y - CELL/2 + 1, CELL - 2, CELL - 2);
+    }
+    if(Object.values(LADDERS).includes(n)) {
+      bctx.fillStyle = 'rgba(0,255,136,0.06)';
+      bctx.fillRect(x - CELL/2 + 1, y - CELL/2 + 1, CELL - 2, CELL - 2);
+    }
+
+    // Cell border
+    bctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    bctx.lineWidth = 0.5;
+    bctx.strokeRect(x - CELL/2 + 0.5, y - CELL/2 + 0.5, CELL - 1, CELL - 1);
+
+    // Square number
+    bctx.fillStyle = (n === 100) ? 'rgba(255,215,0,0.9)' : 'rgba(255,255,255,0.2)';
+    bctx.font = (n === 100) ? 'bold 11px Orbitron' : '9px Rajdhani';
+    bctx.textAlign = 'center';
+    bctx.textBaseline = 'top';
+    bctx.fillText(n, x, y - CELL/2 + 4);
+  }
+
+  // Star on 100
+  const p100 = squareToXY(100);
+  bctx.font = '22px serif';
+  bctx.textAlign = 'center';
+  bctx.textBaseline = 'middle';
+  bctx.fillText('⭐', p100.x, p100.y + 6);
+
+  // ── DRAW LADDERS ────────────────────────────────────────────────
+  Object.entries(LADDERS).forEach(([bottom, top]) => {
+    const b = squareToXY(parseInt(bottom));
+    const t = squareToXY(parseInt(top));
+    drawLadder(b.x, b.y, t.x, t.y);
+  });
+
+  // ── DRAW SNAKES ─────────────────────────────────────────────────
+  Object.entries(SNAKES).forEach(([head, tail]) => {
+    const h = squareToXY(parseInt(head));
+    const tl = squareToXY(parseInt(tail));
+    drawSnake(h.x, h.y, tl.x, tl.y);
+  });
+}
+
+function drawLadder(x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  const ux = dx/len, uy = dy/len;
+  const px = -uy * 6, py = ux * 6;  // perpendicular offset
+
+  bctx.save();
+  bctx.shadowBlur = 8;
+  bctx.shadowColor = '#00ff88';
+
+  // Two rails
+  [[1,-1],[1,1]].forEach(([s]) => {
+    bctx.beginPath();
+    bctx.moveTo(x1 + px*s, y1 + py*s);
+    bctx.lineTo(x2 + px*s, y2 + py*s);
+    const grad = bctx.createLinearGradient(x1,y1,x2,y2);
+    grad.addColorStop(0,'rgba(0,255,136,0.8)');
+    grad.addColorStop(1,'rgba(0,207,255,0.8)');
+    bctx.strokeStyle = grad;
+    bctx.lineWidth = 3;
+    bctx.lineCap = 'round';
+    bctx.stroke();
+  });
+
+  // Rungs
+  const steps = Math.floor(len / 18);
+  for(let i=1; i<steps; i++) {
+    const t = i/steps;
+    const rx = x1 + dx*t, ry = y1 + dy*t;
+    bctx.beginPath();
+    bctx.moveTo(rx - px, ry - py);
+    bctx.lineTo(rx + px, ry + py);
+    bctx.strokeStyle = 'rgba(0,255,136,0.5)';
+    bctx.lineWidth = 2;
+    bctx.stroke();
+  }
+
+  // Glow dots at ends
+  [{ x:x1, y:y1 },{ x:x2, y:y2 }].forEach(pt => {
+    bctx.beginPath();
+    bctx.arc(pt.x, pt.y, 4, 0, Math.PI*2);
+    bctx.fillStyle = '#00ff88';
+    bctx.shadowBlur = 15;
+    bctx.shadowColor = '#00ff88';
+    bctx.fill();
+  });
+
+  bctx.restore();
+}
+
+function drawSnake(hx, hy, tx, ty) {
+  const dx = tx - hx, dy = ty - hy;
+  const midX = (hx + tx)/2, midY = (hy + ty)/2;
+  const perpX = -dy * 0.35, perpY = dx * 0.35;
+
+  bctx.save();
+  bctx.shadowBlur = 10;
+  bctx.shadowColor = '#ff4466';
+
+  // Curvy snake body
+  const grad = bctx.createLinearGradient(hx, hy, tx, ty);
+  grad.addColorStop(0,'rgba(255,68,102,0.9)');
+  grad.addColorStop(0.5,'rgba(255,150,60,0.85)');
+  grad.addColorStop(1,'rgba(200,68,102,0.7)');
+  bctx.strokeStyle = grad;
+  bctx.lineWidth = 5;
+  bctx.lineCap = 'round';
+  bctx.lineJoin = 'round';
+
+  bctx.beginPath();
+  bctx.moveTo(hx, hy);
+  bctx.bezierCurveTo(
+    midX + perpX*1.5, midY + perpY*1.5,
+    midX - perpX*1.5, midY - perpY*1.5,
+    tx, ty
+  );
+  bctx.stroke();
+
+  // Outline
+  bctx.strokeStyle = 'rgba(255,68,102,0.25)';
+  bctx.lineWidth = 9;
+  bctx.beginPath();
+  bctx.moveTo(hx, hy);
+  bctx.bezierCurveTo(
+    midX + perpX*1.5, midY + perpY*1.5,
+    midX - perpX*1.5, midY - perpY*1.5,
+    tx, ty
+  );
+  bctx.stroke();
+
+  // Snake head circle
+  bctx.beginPath();
+  bctx.arc(hx, hy, 7, 0, Math.PI*2);
+  bctx.fillStyle = '#ff4466';
+  bctx.shadowBlur = 18;
+  bctx.shadowColor = '#ff4466';
+  bctx.fill();
+
+  // Eyes
+  const eyeAngle = Math.atan2(ty - hy, tx - hx) + Math.PI/2;
+  [1,-1].forEach(side => {
+    const ex = hx + Math.cos(eyeAngle)*3.5*side - Math.cos(Math.atan2(ty-hy,tx-hx))*3;
+    const ey = hy + Math.sin(eyeAngle)*3.5*side - Math.sin(Math.atan2(ty-hy,tx-hx))*3;
+    bctx.beginPath();
+    bctx.arc(ex, ey, 1.5, 0, Math.PI*2);
+    bctx.fillStyle = '#fff';
+    bctx.shadowBlur = 0;
+    bctx.fill();
+  });
+
+  // Tail dot
+  bctx.beginPath();
+  bctx.arc(tx, ty, 4, 0, Math.PI*2);
+  bctx.fillStyle = 'rgba(200,68,102,0.6)';
+  bctx.shadowBlur = 8;
+  bctx.shadowColor = '#ff4466';
+  bctx.fill();
+
+  bctx.restore();
+}
+
+// ── TOKEN STATE (pixel positions for smooth animation) ────────────
+// Each token has a pixel {x,y} that is interpolated every frame
+const tokens = {
+  1: { x: -999, y: -999, pos: 0, color: '#00cfff', label: 'P1', trail: [] },
+  2: { x: -999, y: -999, pos: 0, color: '#ff6b9d', label: 'P2', trail: [] }
+};
+
+function lighten(color) {
+  return color === '#00cfff' ? '#80e8ff' : '#ffaac8';
+}
+
+// ── DRAW PLAYERS ──────────────────────────────────────────────────
+function drawPlayers() {
+  [1, 2].forEach(p => {
+    const tk = tokens[p];
+    if(tk.pos === 0 && tk.x === -999) return; // not placed yet
+
+    const other = tokens[p === 1 ? 2 : 1];
+    const sameCell = Math.round(tk.x) === Math.round(other.x) && Math.round(tk.y) === Math.round(other.y);
+    const offX = sameCell ? (p === 1 ? -9 : 9) : 0;
+
+    // Trail dots
+    tk.trail.forEach((pt, i) => {
+      const a = (i / tk.trail.length) * 0.25;
+      bctx.beginPath();
+      bctx.arc(pt.x + offX, pt.y, 3 * (i / tk.trail.length), 0, Math.PI * 2);
+      bctx.fillStyle = tk.color.replace(')', `,${a})`).replace('rgb', 'rgba').replace('#00cfff', `rgba(0,207,255,${a})`).replace('#ff6b9d', `rgba(255,107,157,${a})`);
+      bctx.fill();
+    });
+
+    drawToken(tk.x + offX, tk.y, tk.color, tk.label, animating);
+  });
+}
+
+function drawToken(x, y, color, label, glowing) {
+  bctx.save();
+  bctx.shadowBlur = glowing ? 28 : 12;
+  bctx.shadowColor = color;
+
+  // Drop shadow
+  bctx.beginPath();
+  bctx.arc(x + 1, y + 2, 10, 0, Math.PI * 2);
+  bctx.fillStyle = 'rgba(0,0,0,0.35)';
+  bctx.shadowBlur = 0;
+  bctx.fill();
+
+  // Body
+  bctx.shadowBlur = glowing ? 28 : 12;
+  bctx.shadowColor = color;
+  bctx.beginPath();
+  bctx.arc(x, y, 10, 0, Math.PI * 2);
+  const g = bctx.createRadialGradient(x - 3, y - 3, 1, x, y, 10);
+  g.addColorStop(0, lighten(color));
+  g.addColorStop(1, color);
+  bctx.fillStyle = g;
+  bctx.fill();
+  bctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  bctx.lineWidth = 1.5;
+  bctx.stroke();
+
+  // Label
+  bctx.shadowBlur = 0;
+  bctx.fillStyle = '#000';
+  bctx.font = 'bold 8px Orbitron';
+  bctx.textAlign = 'center';
+  bctx.textBaseline = 'middle';
+  bctx.fillText(label, x, y);
+  bctx.restore();
+}
+
+// ── GAME LOOP (always running) ────────────────────────────────────
+let animating = false;
+let loopRunning = false;
+
+function startLoop() {
+  if(loopRunning) return;
+  loopRunning = true;
+  (function loop() {
+    drawBoard();
+    drawPlayers();
+    requestAnimationFrame(loop);
+  })();
+}
+
+// ── EASING ────────────────────────────────────────────────────────
+function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+function easeOut(t)   { return 1 - Math.pow(1-t, 3); }
+function bounce(t)    { // arc height: rises then falls
+  return Math.sin(t * Math.PI);
+}
+
+// ── GAME STATE ────────────────────────────────────────────────────
+let p1Pos = 0, p2Pos = 0;
+let currentPlayer = 1;
+let gameActive = true;
+let rolling = false;
+
+function setStatus(msg, color = 'rgba(255,255,255,0.5)') {
+  const el = document.getElementById('statusBox');
+  el.textContent = msg;
+  el.style.color = color;
+}
+
+function updateCards() {
+  document.getElementById('card1').classList.toggle('active', currentPlayer === 1);
+  document.getElementById('card2').classList.toggle('active', currentPlayer === 2);
+  document.getElementById('pos1').textContent = tokens[1].pos;
+  document.getElementById('pos2').textContent = tokens[2].pos;
+}
+
+// ── SMOOTH STEP-BY-STEP HOP ANIMATION ─────────────────────────────
+// Moves token one square at a time with a little arc per hop
+function animateHops(player, squares, callback) {
+  const tk = tokens[player];
+  if(squares.length === 0) { callback(); return; }
+
+  let idx = 0;
+
+  function hopTo(targetSquare) {
+    const from = { x: tk.x, y: tk.y };
+    const { x: tx, y: ty } = squareToXY(targetSquare);
+    const to   = { x: tx, y: ty + 4 };
+    const DURATION = 110; // ms per hop — snappy but smooth
+    const ARC_HEIGHT = 14; // pixels of bounce arc
+    const start = performance.now();
+
+    function frame(now) {
+      const raw = Math.min(1, (now - start) / DURATION);
+      const t   = easeInOut(raw);
+
+      tk.x = from.x + (to.x - from.x) * t;
+      tk.y = from.y + (to.y - from.y) * t - ARC_HEIGHT * bounce(raw);
+
+      // Trail
+      tk.trail.push({ x: tk.x, y: tk.y });
+      if(tk.trail.length > 6) tk.trail.shift();
+
+      if(raw < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        tk.x = to.x; tk.y = to.y;
+        tk.pos = targetSquare;
+        updateCards();
+        idx++;
+        if(idx < squares.length) {
+          setTimeout(() => hopTo(squares[idx]), 18);
+        } else {
+          tk.trail = [];
+          callback();
+        }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  hopTo(squares[idx]);
+}
+
+// ── SMOOTH GLIDE ANIMATION (snake / ladder) ───────────────────────
+function animateGlide(player, fromSq, toSq, type, callback) {
+  const tk = tokens[player];
+  const fromPt = squareToXY(fromSq);
+  const toPt   = squareToXY(toSq);
+  const from   = { x: fromPt.x, y: fromPt.y + 4 };
+  const to     = { x: toPt.x,   y: toPt.y   + 4 };
+
+  // Bezier control point for a curvy glide
+  const midX = (from.x + to.x) / 2;
+  const midY = (from.y + to.y) / 2;
+  const cpX  = midX + (to.y - from.y) * 0.4;
+  const cpY  = midY - (to.x - from.x) * 0.4;
+
+  const DURATION = type === 'snake' ? 700 : 500;
+  const start = performance.now();
+
+  function frame(now) {
+    const raw = Math.min(1, (now - start) / DURATION);
+    const t   = easeInOut(raw);
+
+    // Quadratic bezier interpolation
+    tk.x = (1-t)*(1-t)*from.x + 2*(1-t)*t*cpX + t*t*to.x;
+    tk.y = (1-t)*(1-t)*from.y + 2*(1-t)*t*cpY + t*t*to.y;
+
+    tk.trail.push({ x: tk.x, y: tk.y });
+    if(tk.trail.length > 10) tk.trail.shift();
+
+    if(raw < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      tk.x = to.x; tk.y = to.y;
+      tk.pos = toSq;
+      tk.trail = [];
+      updateCards();
+      callback();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ── DICE ──────────────────────────────────────────────────────────
+function rollDice() {
+  if(!gameActive || rolling) return;
+  rolling = true;
+  animating = true;
+  document.getElementById('rollBtn').disabled = true;
+
+  const face = document.getElementById('diceFace');
+  face.classList.add('rolling');
+
+  let count = 0;
+  const interval = setInterval(() => {
+    face.textContent = DICE_FACES[Math.floor(Math.random() * 6) + 1];
+    count++;
+    if(count >= 10) {
+      clearInterval(interval);
+      face.classList.remove('rolling');
+      const result = Math.floor(Math.random() * 6) + 1;
+      face.textContent = DICE_FACES[result];
+      setTimeout(() => processMove(result), 200);
+    }
+  }, 55);
+}
+
+// ── PROCESS MOVE ──────────────────────────────────────────────────
+function processMove(roll) {
+  const cp  = currentPlayer;
+  const tk  = tokens[cp];
+  const prevPos = tk.pos;
+  let newPos = prevPos + roll;
+  if(newPos > 100) newPos = prevPos; // bounce back rule
+
+  // Build list of squares to hop through
+  const hops = [];
+  for(let s = prevPos + 1; s <= newPos; s++) hops.push(s);
+
+  animateHops(cp, hops, () => {
+    // After landing, check snake or ladder
+    if(SNAKES[newPos]) {
+      const dest = SNAKES[newPos];
+      setStatus(`🐍 Snake! Sliding down ${newPos} → ${dest}`, '#ff6b9d');
+      setTimeout(() => {
+        animateGlide(cp, newPos, dest, 'snake', () => {
+          finishTurn(cp, dest);
+        });
+      }, 250);
+    } else if(LADDERS[newPos]) {
+      const dest = LADDERS[newPos];
+      setStatus(`🪜 Ladder! Climbing up ${newPos} → ${dest}`, '#00ff88');
+      setTimeout(() => {
+        animateGlide(cp, newPos, dest, 'ladder', () => {
+          finishTurn(cp, dest);
+        });
+      }, 250);
+    } else {
+      finishTurn(cp, newPos);
+    }
+  });
+}
+
+function finishTurn(cp, finalPos) {
+  animating = false;
+  if(finalPos === 100) {
+    setStatus(`🎉 Player ${cp} WINS!`, cp === 1 ? '#00cfff' : '#ff6b9d');
+    gameActive = false;
+    document.getElementById('rollBtn').disabled = true;
+    rolling = false;
+    return;
+  }
+  currentPlayer = cp === 1 ? 2 : 1;
+  updateCards();
+  setStatus(`Player ${currentPlayer}'s turn — Roll the dice!`, currentPlayer === 1 ? '#00cfff' : '#ff6b9d');
+  rolling = false;
+  document.getElementById('rollBtn').disabled = false;
+}
+
+// ── RESET ─────────────────────────────────────────────────────────
+function resetGame() {
+  p1Pos = 0; p2Pos = 0;
+  currentPlayer = 1;
+  gameActive = true;
+  rolling = false;
+  animating = false;
+  tokens[1] = { x: -999, y: -999, pos: 0, color: '#00cfff', label: 'P1', trail: [] };
+  tokens[2] = { x: -999, y: -999, pos: 0, color: '#ff6b9d', label: 'P2', trail: [] };
+  document.getElementById('diceFace').textContent = '🎲';
+  document.getElementById('rollBtn').disabled = false;
+  updateCards();
+  setStatus("Player 1's turn — Roll the dice!", '#00cfff');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+// Place both tokens off-board initially, start loop
+startLoop();
+updateCards();
+</script>
+</body>
+</html>

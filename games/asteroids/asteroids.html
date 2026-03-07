@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asteroids — Neon Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#030508; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; font-family:'Rajdhani',sans-serif; color:#fff; overflow:hidden; user-select:none; }
+.title { font-family:'Orbitron',sans-serif; font-size:28px; font-weight:900; letter-spacing:6px; background:linear-gradient(90deg,#00cfff,#a855f7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:12px; }
+.hud { display:flex; gap:32px; margin-bottom:10px; }
+.hud-item { text-align:center; }
+.hud-label { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.3); }
+.hud-val { font-family:'Orbitron',sans-serif; font-size:20px; font-weight:700; color:#00cfff; text-shadow:0 0 12px rgba(0,207,255,0.5); }
+canvas { border-radius:12px; box-shadow:0 0 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,207,255,0.1); display:block; }
+.controls { margin-top:10px; font-size:12px; color:rgba(255,255,255,0.25); letter-spacing:0.06em; }
+.overlay { position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; inset:0; background:rgba(3,5,8,0.85); backdrop-filter:blur(12px); border-radius:12px; z-index:10; }
+.ov-title { font-family:'Orbitron',sans-serif; font-size:36px; font-weight:900; margin-bottom:8px; }
+.ov-sub { font-size:14px; color:rgba(255,255,255,0.4); margin-bottom:32px; }
+.ov-score { font-family:'Orbitron',sans-serif; font-size:52px; font-weight:900; color:#00cfff; text-shadow:0 0 30px rgba(0,207,255,0.6); margin-bottom:8px; }
+.btn { font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.15em; color:#030508; background:linear-gradient(135deg,#00cfff,#a855f7); border:none; padding:12px 40px; border-radius:50px; cursor:pointer; transition:all 0.25s; box-shadow:0 0 25px rgba(0,207,255,0.3); }
+.btn:hover { transform:translateY(-2px); box-shadow:0 0 40px rgba(0,207,255,0.5); }
+.canvas-wrap { position:relative; }
+</style>
+</head>
+<body>
+<div class="title">☄️ ASTEROIDS</div>
+<div class="hud">
+  <div class="hud-item"><div class="hud-label">Score</div><div class="hud-val" id="scoreEl">0</div></div>
+  <div class="hud-item"><div class="hud-label">Level</div><div class="hud-val" id="levelEl">1</div></div>
+  <div class="hud-item"><div class="hud-label">Lives</div><div class="hud-val" id="livesEl">❤️❤️❤️</div></div>
+  <div class="hud-item"><div class="hud-label">Best</div><div class="hud-val" id="bestEl">0</div></div>
+</div>
+<div class="canvas-wrap">
+  <canvas id="c" width="640" height="480"></canvas>
+  <div class="overlay" id="overlay">
+    <div class="ov-title" style="background:linear-gradient(90deg,#00cfff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">ASTEROIDS</div>
+    <div class="ov-sub">Destroy asteroids · Survive · Beat your best</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.3);margin-bottom:28px;text-align:center;line-height:1.8;">↑ Thrust &nbsp;|&nbsp; ← → Rotate &nbsp;|&nbsp; Space Shoot &nbsp;|&nbsp; S Shield</div>
+    <button class="btn" onclick="startGame()">LAUNCH</button>
+  </div>
+  <div class="overlay" id="gameOverOverlay" style="display:none;">
+    <div class="ov-title" style="color:#ff4466;text-shadow:0 0 30px rgba(255,68,102,0.6);">DESTROYED</div>
+    <div class="ov-sub">Your ship has been lost in space</div>
+    <div class="ov-score" id="finalScore">0</div>
+    <div style="font-size:13px;color:#00cfff;margin-bottom:28px;" id="bestMsg"></div>
+    <button class="btn" onclick="startGame()">FLY AGAIN</button>
+  </div>
+</div>
+<div class="controls">↑ Thrust &nbsp;|&nbsp; ← → Rotate &nbsp;|&nbsp; SPACE Shoot &nbsp;|&nbsp; S Shield</div>
+
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const W = c.width, H = c.height;
+
+let score, level, lives, ship, asteroids, bullets, particles, shield, shieldEnergy, invincible, invTimer, running, animId, keys;
+let best = parseInt(localStorage.getItem('asteroidsBS') || '0');
+document.getElementById('bestEl').textContent = best;
+
+function startGame() {
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('gameOverOverlay').style.display = 'none';
+  score = 0; level = 1; lives = 3; shield = false; shieldEnergy = 100;
+  invincible = false; invTimer = 0;
+  keys = {};
+  ship = { x:W/2, y:H/2, vx:0, vy:0, angle:-Math.PI/2, thrust:false, dead:false };
+  asteroids = []; bullets = []; particles = [];
+  spawnAsteroids(4 + level);
+  running = true;
+  if(animId) cancelAnimationFrame(animId);
+  loop();
+}
+
+function spawnAsteroids(n) {
+  for(let i=0;i<n;i++) {
+    let x,y;
+    do { x=Math.random()*W; y=Math.random()*H; } while(Math.hypot(x-ship.x,y-ship.y)<120);
+    asteroids.push(makeAsteroid(x,y,Math.random()*2+1.5,'large'));
+  }
+}
+
+function makeAsteroid(x,y,speed,size) {
+  const sizes = { large:52, medium:28, small:14 };
+  const r = sizes[size];
+  const angle = Math.random()*Math.PI*2;
+  const pts = [];
+  const n = 10 + Math.floor(Math.random()*4);
+  for(let i=0;i<n;i++) {
+    const a = (i/n)*Math.PI*2;
+    const rr = r*(0.7+Math.random()*0.5);
+    pts.push({x:Math.cos(a)*rr, y:Math.sin(a)*rr});
+  }
+  return { x,y, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+    r, size, pts, rot:0, rotV:(Math.random()-0.5)*0.04 };
+}
+
+function spawnParticles(x,y,color,n=12) {
+  for(let i=0;i<n;i++) {
+    const a=Math.random()*Math.PI*2, s=Math.random()*4+1;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,decay:Math.random()*0.03+0.02,color,size:Math.random()*3+1});
+  }
+}
+
+const KEYS = { ArrowLeft:1,ArrowRight:1,ArrowUp:1,' ':1,'s':1,'S':1 };
+let shootCool = 0;
+document.addEventListener('keydown', e=>{ if(KEYS[e.key]){keys[e.key]=true;e.preventDefault();} });
+document.addEventListener('keyup',   e=>{ keys[e.key]=false; });
+
+function loop() {
+  if(!running){return;}
+  update();
+  draw();
+  animId = requestAnimationFrame(loop);
+}
+
+function update() {
+  shootCool = Math.max(0, shootCool-1);
+  if(invincible) { invTimer--; if(invTimer<=0) invincible=false; }
+
+  if(!ship.dead) {
+    if(keys['ArrowLeft'])  ship.angle -= 0.07;
+    if(keys['ArrowRight']) ship.angle += 0.07;
+    ship.thrust = keys['ArrowUp'];
+    if(ship.thrust) {
+      ship.vx += Math.cos(ship.angle)*0.22;
+      ship.vy += Math.sin(ship.angle)*0.22;
+      spawnParticles(ship.x - Math.cos(ship.angle)*14, ship.y - Math.sin(ship.angle)*14, '#ff6b00', 1);
+    }
+    ship.vx *= 0.985; ship.vy *= 0.985;
+    ship.x = (ship.x+ship.vx+W)%W; ship.y = (ship.y+ship.vy+H)%H;
+
+    if(keys[' '] && shootCool===0) {
+      bullets.push({x:ship.x+Math.cos(ship.angle)*18, y:ship.y+Math.sin(ship.angle)*18,
+        vx:Math.cos(ship.angle)*10+ship.vx, vy:Math.sin(ship.angle)*10+ship.vy, life:55});
+      shootCool = 12;
+    }
+
+    shield = keys['s'] || keys['S'];
+    if(shield) { shieldEnergy = Math.max(0, shieldEnergy-1.2); if(shieldEnergy===0) shield=false; }
+    else shieldEnergy = Math.min(100, shieldEnergy+0.3);
+  }
+
+  bullets = bullets.filter(b=>b.life>0);
+  bullets.forEach(b=>{ b.x=(b.x+b.vx+W)%W; b.y=(b.y+b.vy+H)%H; b.life--; });
+
+  asteroids.forEach(a=>{ a.x=(a.x+a.vx+W)%W; a.y=(a.y+a.vy+H)%H; a.rot+=a.rotV; });
+
+  for(let bi=bullets.length-1;bi>=0;bi--) {
+    const b=bullets[bi];
+    for(let ai=asteroids.length-1;ai>=0;ai--) {
+      const a=asteroids[ai];
+      if(Math.hypot(b.x-a.x,b.y-a.y)<a.r) {
+        bullets.splice(bi,1);
+        spawnParticles(a.x,a.y,'#ff9f43',16);
+        const pts = {large:100,medium:50,small:25};
+        score += pts[a.size] * level;
+        if(a.size==='large') { asteroids.push(makeAsteroid(a.x,a.y,2.5,'medium'),makeAsteroid(a.x,a.y,2.5,'medium')); }
+        else if(a.size==='medium') { asteroids.push(makeAsteroid(a.x,a.y,3.5,'small'),makeAsteroid(a.x,a.y,3.5,'small')); }
+        asteroids.splice(ai,1);
+        updateHUD();
+        break;
+      }
+    }
+  }
+
+  if(!invincible && !ship.dead) {
+    for(const a of asteroids) {
+      if(Math.hypot(ship.x-a.x,ship.y-a.y)<a.r+12) {
+        if(shield) { spawnParticles(ship.x,ship.y,'#00cfff',20); }
+        else {
+          lives--;
+          spawnParticles(ship.x,ship.y,'#ff4466',30);
+          if(lives<=0) { endGame(); return; }
+          invincible=true; invTimer=150;
+          ship.x=W/2; ship.y=H/2; ship.vx=0; ship.vy=0;
+        }
+        updateHUD(); break;
+      }
+    }
+  }
+
+  if(asteroids.length===0) {
+    level++;
+    spawnParticles(W/2,H/2,'#a855f7',40);
+    spawnAsteroids(4+level);
+    updateHUD();
+  }
+
+  particles.forEach(p=>{ p.x+=p.vx;p.y+=p.vy;p.vx*=0.94;p.vy*=0.94;p.life-=p.decay; });
+  particles=particles.filter(p=>p.life>0);
+}
+
+function draw() {
+  ctx.fillStyle='rgba(3,5,8,0.25)';
+  ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  for(let i=0;i<60;i++){
+    const sx=(i*137.5+13)%W, sy=(i*97.3+7)%H;
+    ctx.fillRect(sx,sy,1,1);
+  }
+
+  particles.forEach(p=>{
+    ctx.save();ctx.globalAlpha=p.life;ctx.shadowBlur=8;ctx.shadowColor=p.color;
+    ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fill();ctx.restore();
+  });
+
+  asteroids.forEach(a=>{
+    ctx.save();ctx.translate(a.x,a.y);ctx.rotate(a.rot);
+    ctx.shadowBlur=12;ctx.shadowColor='rgba(168,85,247,0.6)';
+    ctx.strokeStyle='rgba(168,85,247,0.8)';ctx.lineWidth=2;
+    ctx.beginPath();
+    a.pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+    ctx.closePath();ctx.stroke();
+    ctx.fillStyle='rgba(168,85,247,0.08)';ctx.fill();
+    ctx.restore();
+  });
+
+  bullets.forEach(b=>{
+    ctx.save();ctx.shadowBlur=14;ctx.shadowColor='#00ff88';
+    ctx.fillStyle='#00ff88';ctx.beginPath();ctx.arc(b.x,b.y,3,0,Math.PI*2);ctx.fill();ctx.restore();
+  });
+
+  if(!ship.dead) {
+    if(invincible && Math.floor(invTimer/6)%2===0) { ctx.restore?.(); }
+    else {
+      ctx.save();ctx.translate(ship.x,ship.y);ctx.rotate(ship.angle);
+      ctx.shadowBlur=18;ctx.shadowColor='#00cfff';
+      ctx.strokeStyle='#00cfff';ctx.lineWidth=2;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(-12,10);ctx.lineTo(-8,0);ctx.lineTo(-12,-10);ctx.closePath();ctx.stroke();
+      ctx.fillStyle='rgba(0,207,255,0.08)';ctx.fill();
+
+      if(ship.thrust) {
+        ctx.shadowColor='#ff6b00';ctx.strokeStyle='rgba(255,107,0,0.8)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(-8,0);ctx.lineTo(-20+Math.random()*8,0);ctx.stroke();
+      }
+
+      if(shield) {
+        ctx.shadowBlur=24;ctx.shadowColor='#00cfff';
+        ctx.strokeStyle=`rgba(0,207,255,${0.3+Math.sin(Date.now()*0.01)*0.2})`;
+        ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,28,0,Math.PI*2);ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fillRect(10,H-20,120,6);
+  ctx.fillStyle=shieldEnergy>30?'#00cfff':'#ff4466';
+  ctx.fillRect(10,H-20,shieldEnergy/100*120,6);
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px Orbitron';ctx.fillText('SHIELD',10,H-24);
+}
+
+function updateHUD() {
+  document.getElementById('scoreEl').textContent=score;
+  document.getElementById('levelEl').textContent=level;
+  document.getElementById('livesEl').textContent='❤️'.repeat(Math.max(0,lives));
+}
+
+function endGame() {
+  running=false;
+  ship.dead=true;
+  if(score>best){best=score;localStorage.setItem('asteroidsBS',best);}
+  document.getElementById('finalScore').textContent=score;
+  document.getElementById('bestEl').textContent=best;
+  document.getElementById('bestMsg').textContent=score>=best?'🏆 New Best Score!':'Best: '+best;
+  setTimeout(()=>{ document.getElementById('gameOverOverlay').style.display='flex'; },800);
+}
+</script>
+</body>
+</html>

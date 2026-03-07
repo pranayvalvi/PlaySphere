@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Speed — Neon Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#030508;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Rajdhani',sans-serif;color:#fff;overflow:hidden;user-select:none;}
+.title{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;letter-spacing:6px;background:linear-gradient(90deg,#00cfff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px;}
+.hud{display:flex;gap:16px;margin-bottom:18px;}
+.hud-pill{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:8px 20px;text-align:center;min-width:80px;}
+.hud-label{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.3);}
+.hud-val{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;}
+.text-box{width:680px;background:rgba(255,255,255,0.03);border:1px solid rgba(0,207,255,0.15);border-radius:16px;padding:24px 28px;font-size:20px;line-height:2;letter-spacing:0.03em;margin-bottom:16px;position:relative;min-height:110px;}
+.char{transition:color 0.08s;}
+.char.correct{color:#00ff88;text-shadow:0 0 8px rgba(0,255,136,0.5);}
+.char.incorrect{color:#ff4466;background:rgba(255,68,102,0.15);border-radius:2px;text-shadow:0 0 8px rgba(255,68,102,0.5);}
+.char.current{color:#fff;border-bottom:2px solid #00cfff;animation:blink 0.8s ease infinite;text-shadow:0 0 12px rgba(0,207,255,0.8);}
+@keyframes blink{0%,100%{border-color:#00cfff;} 50%{border-color:transparent;}}
+.char.pending{color:rgba(255,255,255,0.25);}
+input.type-input{width:680px;background:rgba(255,255,255,0.04);border:1px solid rgba(0,207,255,0.2);border-radius:12px;padding:14px 20px;font-size:16px;font-family:'Rajdhani',sans-serif;color:#fff;outline:none;caret-color:#00cfff;transition:border-color 0.2s;}
+input.type-input:focus{border-color:rgba(0,207,255,0.5);box-shadow:0 0 20px rgba(0,207,255,0.1);}
+input.type-input::placeholder{color:rgba(255,255,255,0.2);}
+.time-row{display:flex;gap:8px;margin-bottom:16px;}
+.time-btn{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;padding:7px 18px;border-radius:50px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.35);cursor:pointer;transition:all 0.2s;}
+.time-btn.active{background:rgba(0,207,255,0.15);border-color:rgba(0,207,255,0.4);color:#00cfff;}
+.result-overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(3,5,8,0.92);backdrop-filter:blur(14px);z-index:100;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.result-overlay.show{opacity:1;pointer-events:all;}
+.r-title{font-family:'Orbitron',sans-serif;font-size:36px;font-weight:900;margin-bottom:24px;background:linear-gradient(90deg,#00cfff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.r-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;}
+.r-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px 24px;text-align:center;}
+.r-val{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;}
+.r-lbl{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:4px;}
+.btn{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.15em;color:#030508;background:linear-gradient(135deg,#00cfff,#00ff88);border:none;padding:12px 40px;border-radius:50px;cursor:pointer;transition:all 0.25s;box-shadow:0 0 25px rgba(0,207,255,0.3);}
+.btn:hover{transform:translateY(-2px);}
+.progress-bar{width:680px;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:14px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,#00cfff,#00ff88);border-radius:2px;transition:width 0.1s;box-shadow:0 0 8px rgba(0,207,255,0.5);}
+</style>
+</head>
+<body>
+<div class="title">⌨️ TYPING SPEED</div>
+<div class="time-row">
+  <button class="time-btn" onclick="setTime(15)">15s</button>
+  <button class="time-btn active" onclick="setTime(30)">30s</button>
+  <button class="time-btn" onclick="setTime(60)">60s</button>
+  <button class="time-btn" onclick="setTime(120)">2min</button>
+</div>
+<div class="hud">
+  <div class="hud-pill"><div class="hud-label">WPM</div><div class="hud-val" id="wpm" style="color:#00cfff;text-shadow:0 0 12px rgba(0,207,255,0.5)">0</div></div>
+  <div class="hud-pill"><div class="hud-label">Accuracy</div><div class="hud-val" id="acc" style="color:#00ff88;text-shadow:0 0 12px rgba(0,255,136,0.5)">100%</div></div>
+  <div class="hud-pill"><div class="hud-label">Time</div><div class="hud-val" id="tim" style="color:#a855f7;text-shadow:0 0 12px rgba(168,85,247,0.5)">30</div></div>
+  <div class="hud-pill"><div class="hud-label">Best WPM</div><div class="hud-val" id="best" style="color:#ffd700;text-shadow:0 0 12px rgba(255,215,0,0.5)">0</div></div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="prog" style="width:100%"></div></div>
+<div class="text-box" id="textBox"></div>
+<input class="type-input" id="inp" placeholder="Click here and start typing..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+<div class="result-overlay" id="resultOv">
+  <div class="r-title">RESULTS</div>
+  <div class="r-grid">
+    <div class="r-box"><div class="r-val" id="rWpm" style="color:#00cfff">0</div><div class="r-lbl">WPM</div></div>
+    <div class="r-box"><div class="r-val" id="rAcc" style="color:#00ff88">0%</div><div class="r-lbl">Accuracy</div></div>
+    <div class="r-box"><div class="r-val" id="rChars" style="color:#a855f7">0</div><div class="r-lbl">Chars</div></div>
+    <div class="r-box"><div class="r-val" id="rBest" style="color:#ffd700">0</div><div class="r-lbl">Best WPM</div></div>
+  </div>
+  <button class="btn" onclick="restart()">TYPE AGAIN</button>
+</div>
+
+<script>
+const TEXTS=[
+  "the quick brown fox jumps over the lazy dog and then runs back through the garden",
+  "programming is the art of telling another human what one wants the computer to do in a clear and precise manner",
+  "practice makes perfect so keep typing every day to improve your words per minute and accuracy score",
+  "the neon lights flickered across the rain soaked street as the hacker typed furiously into the terminal",
+  "speed and accuracy are both important when it comes to typing so try to balance them as you improve",
+  "every keystroke brings you closer to mastery so do not give up and keep pushing your limits higher",
+  "the stars burned bright above the city as the programmer wrote code late into the quiet night",
+  "to be or not to be that is the question that shakespeare wrote so many hundreds of years ago",
+  "technology moves fast and those who can type quickly will always have an advantage in the modern world",
+  "the rain fell softly on the keyboard as the writer crafted words that would outlast the storm",
+];
+
+let timeLimit=30,timeLeft,text,charIdx,errors,started,timerInt,totalTyped,bestWpm;
+bestWpm=parseInt(localStorage.getItem('typingBest')||'0');
+document.getElementById('best').textContent=bestWpm;
+
+function setTime(t){
+  timeLimit=t;
+  document.querySelectorAll('.time-btn').forEach(b=>b.classList.toggle('active',b.textContent===t+'s'||b.textContent===t/60+'min'));
+  restart();
+}
+
+function restart(){
+  document.getElementById('resultOv').classList.remove('show');
+  text=TEXTS[Math.floor(Math.random()*TEXTS.length)];
+  charIdx=0;errors=0;started=false;totalTyped=0;
+  timeLeft=timeLimit;
+  clearInterval(timerInt);
+  document.getElementById('tim').textContent=timeLeft;
+  document.getElementById('wpm').textContent=0;
+  document.getElementById('acc').textContent='100%';
+  document.getElementById('prog').style.width='100%';
+  renderText();
+  const inp=document.getElementById('inp');
+  inp.value='';inp.focus();
+}
+
+function renderText(){
+  const box=document.getElementById('textBox');
+  box.innerHTML='';
+  for(let i=0;i<text.length;i++){
+    const span=document.createElement('span');
+    if(i===0)span.className='char current';
+    else span.className='char pending';
+    span.textContent=text[i]===' '&&i===0?'_':text[i];
+    span.id='ch'+i;
+    box.appendChild(span);
+  }
+}
+
+function updateChars(typed){
+  for(let i=0;i<text.length;i++){
+    const span=document.getElementById('ch'+i);
+    if(!span)continue;
+    if(i<typed.length){
+      if(typed[i]===text[i]){span.className='char correct';}
+      else{span.className='char incorrect';}
+    } else if(i===typed.length){
+      span.className='char current';
+      span.textContent=text[i]===' '?'_':text[i];
+    } else {
+      span.className='char pending';
+      span.textContent=text[i];
+    }
+  }
+}
+
+document.getElementById('inp').addEventListener('input',e=>{
+  const typed=e.target.value;
+  if(typed.length>text.length){e.target.value=typed.slice(0,text.length);return;}
+
+  if(!started&&typed.length>0){
+    started=true;
+    timerInt=setInterval(()=>{
+      timeLeft--;
+      document.getElementById('tim').textContent=timeLeft;
+      document.getElementById('prog').style.width=(timeLeft/timeLimit*100)+'%';
+      updateLiveStats(typed);
+      if(timeLeft<=0){clearInterval(timerInt);showResults(typed);}
+    },1000);
+  }
+
+  updateChars(typed);
+  totalTyped=Math.max(totalTyped,typed.length);
+
+  errors=0;
+  for(let i=0;i<typed.length;i++)if(typed[i]!==text[i])errors++;
+
+  updateLiveStats(typed);
+
+  if(typed===text){clearInterval(timerInt);showResults(typed);}
+});
+
+function updateLiveStats(typed){
+  const elapsed=(timeLimit-timeLeft)||1;
+  const words=typed.trim().split(/\s+/).filter(w=>w.length>0).length;
+  const wpm=Math.round(words/(elapsed/60));
+  const acc=typed.length?Math.round((typed.length-errors)/typed.length*100):100;
+  document.getElementById('wpm').textContent=wpm;
+  document.getElementById('acc').textContent=acc+'%';
+}
+
+function showResults(typed){
+  const elapsed=timeLimit-timeLeft||timeLimit;
+  const words=typed.trim().split(/\s+/).filter(w=>w.length>0).length;
+  const wpm=Math.round(words/(elapsed/60));
+  const acc=typed.length?Math.round((typed.length-errors)/typed.length*100):100;
+  if(wpm>bestWpm){bestWpm=wpm;localStorage.setItem('typingBest',bestWpm);}
+  document.getElementById('best').textContent=bestWpm;
+  document.getElementById('rWpm').textContent=wpm;
+  document.getElementById('rAcc').textContent=acc+'%';
+  document.getElementById('rChars').textContent=typed.length;
+  document.getElementById('rBest').textContent=bestWpm;
+  setTimeout(()=>document.getElementById('resultOv').classList.add('show'),300);
+}
+
+restart();
+</script>
+</body>
+</html>
