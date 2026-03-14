@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playing — PlaySphere</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%237C5CFC'/%3E%3Cpath d='M35 40h10v30h-10z M55 30h10v40h-10z' fill='white'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Variables ─────────────────────────────────────────────── */
+:root {
+  --bg:      #080B14;
+  --surface: #0E1422;
+  --card:    #111827;
+  --border:  rgba(255,255,255,0.07);
+  --accent:  #7C5CFC;
+  --accent2: #FF6B6B;
+  --accent3: #00D4AA;
+  --text:    #F0F4FF;
+  --muted:   #7B8DB0;
+  --gold:    #FFB547;
+  --radius:  14px;
+  --trans:   0.2s ease;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  cursor: none;
+}
+
+/* ── Custom Cursor ─────────────────────────────────────────── */
+#cursor {
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: width .2s, height .2s;
+  mix-blend-mode: screen;
+}
+#cursorRing {
+  width: 36px; height: 36px;
+  border: 1.5px solid rgba(124,92,252,0.5);
+  border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9998;
+  transform: translate(-50%,-50%);
+}
+a, button { cursor: none !important; }
+
+/* ── Top Nav Bar ───────────────────────────────────────────── */
+.top-bar {
+  flex-shrink: 0;
+  height: 56px;
+  background: rgba(8,11,20,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  z-index: 200;
+}
+
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.logo-dot {
+  width: 7px; height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 10px var(--accent); transform: scale(1); }
+  50%      { box-shadow: 0 0 20px var(--accent), 0 0 35px rgba(124,92,252,0.4); transform: scale(1.3); }
+}
+
+.nav-sep {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* Game title + emoji in nav */
+.game-nav-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.game-nav-emoji {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.game-nav-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.game-nav-cat {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(124,92,252,0.12);
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+/* Nav right buttons */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  transition: all var(--trans);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-btn:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.nav-btn-info {
+  border-color: rgba(124,92,252,0.3);
+  color: var(--accent);
+  background: rgba(124,92,252,0.08);
+}
+.nav-btn-info:hover {
+  background: rgba(124,92,252,0.16);
+  border-color: rgba(124,92,252,0.5);
+  color: var(--accent);
+}
+
+.nav-btn-exit {
+  border-color: rgba(255,107,107,0.35);
+  color: var(--accent2);
+  background: rgba(255,107,107,0.08);
+}
+.nav-btn-exit:hover {
+  background: rgba(255,107,107,0.18);
+  border-color: rgba(255,107,107,0.6);
+  color: var(--accent2);
+}
+
+.nav-btn svg {
+  width: 14px; height: 14px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* ── Main Layout ───────────────────────────────────────────── */
+.main-area {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Game iframe ───────────────────────────────────────────── */
+.game-frame-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+
+.game-frame-wrap.panel-open {
+  /* When info panel is open on desktop, shrink slightly */
+}
+
+#gameFrame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* Loading overlay */
+.frame-loader {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 10;
+  transition: opacity 0.4s ease;
+}
+.frame-loader.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.loader-spinner {
+  width: 48px; height: 48px;
+  border: 3px solid rgba(124,92,252,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-emoji { font-size: 40px; animation: loadFloat 1.5s ease-in-out infinite; }
+@keyframes loadFloat {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.loader-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* ── Info Side Panel ───────────────────────────────────────── */
+.info-panel {
+  width: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.info-panel.open {
+  width: 320px;
+}
+
+.info-panel-inner {
+  width: 320px;
+  height: 100%;
+  overflow-y: auto;
+  padding: 28px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124,92,252,0.3) transparent;
+}
+.info-panel-inner::-webkit-scrollbar { width: 4px; }
+.info-panel-inner::-webkit-scrollbar-thumb { background: rgba(124,92,252,0.3); border-radius: 2px; }
+
+.info-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px; height: 28px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--trans);
+}
+.info-close:hover { background: rgba(255,107,107,0.15); color: var(--accent2); border-color: rgba(255,107,107,0.3); }
+
+/* Panel contents */
+.panel-thumb {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56px;
+}
+
+.panel-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+.badge-hot { background: rgba(255,107,107,0.9); color: white; }
+.badge-new { background: rgba(0,212,170,0.9);   color: #0A1A14; }
+.badge-top { background: rgba(255,181,71,0.9);   color: #1A1000; }
+
+.panel-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+
+.panel-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.panel-category {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(124,92,252,0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.panel-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.panel-players {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.panel-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.panel-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+.panel-section-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.controls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.key-badge {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-bottom: 2px solid rgba(255,255,255,0.18);
+  border-radius: 5px;
+  padding: 3px 8px;
+  min-width: 28px;
+  text-align: center;
+  color: var(--text);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.panel-fullscreen-btn {
+  width: 100%;
+  padding: 11px;
+  background: rgba(124,92,252,0.12);
+  border: 1px solid rgba(124,92,252,0.3);
+  border-radius: 10px;
+  color: var(--accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--trans);
+  margin-top: 8px;
+}
+.panel-fullscreen-btn:hover {
+  background: rgba(124,92,252,0.22);
+  border-color: rgba(124,92,252,0.5);
+}
+.panel-fullscreen-btn svg { width: 15px; height: 15px; fill: currentColor; }
+
+.similar-games {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.similar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all var(--trans);
+  font-size: 13px;
+}
+.similar-item:hover {
+  background: rgba(124,92,252,0.08);
+  border-color: rgba(124,92,252,0.25);
+  transform: translateX(3px);
+}
+.similar-emoji { font-size: 20px; flex-shrink: 0; }
+.similar-info { flex: 1; min-width: 0; }
+.similar-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+.similar-cat  { font-size: 11px; color: var(--muted); }
+.similar-arrow { color: var(--muted); font-size: 14px; flex-shrink: 0; }
+
+/* ── Fullscreen mode ───────────────────────────────────────── */
+.game-frame-wrap.fullscreen-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+.game-frame-wrap.fullscreen-mode .fullscreen-exit {
+  display: flex;
+}
+.fullscreen-exit {
+  display: none;
+  position: absolute;
+  top: 12px; right: 12px;
+  padding: 8px 14px;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 6px;
+  align-items: center;
+  z-index: 10;
+  transition: background 0.2s;
+}
+.fullscreen-exit:hover { background: rgba(255,107,107,0.5); }
+.fullscreen-exit svg { width: 13px; height: 13px; fill: white; }
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .info-panel.open { width: 100%; position: fixed; inset: 56px 0 0 0; z-index: 150; }
+  .info-panel-inner { width: 100%; }
+  .game-nav-cat { display: none; }
+  .nav-btn span { display: none; }
+  .nav-btn { padding: 7px 10px; }
+  .top-bar { padding: 0 14px; gap: 10px; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="cursor"></div>
+<div id="cursorRing"></div>
+
+<!-- ── TOP NAV BAR ───────────────────────────────────────── -->
+<div class="top-bar">
+  <a href="index.html" class="nav-logo">
+    <div class="logo-dot" aria-hidden="true"></div>
+    PlaySphere
+  </a>
+
+  <div class="nav-sep"></div>
+
+  <div class="game-nav-info">
+    <span class="game-nav-emoji" id="navEmoji">🎮</span>
+    <span class="game-nav-name" id="navTitle">Loading…</span>
+    <span class="game-nav-cat" id="navCategory"></span>
+  </div>
+
+  <div class="nav-actions">
+    <!-- Browse all -->
+    <a href="browse.html" class="nav-btn">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+      <span>Browse</span>
+    </a>
+
+    <!-- Info toggle -->
+    <button class="nav-btn nav-btn-info" id="infoToggle" onclick="toggleInfo()" aria-label="Game info">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      <span>Info</span>
+    </button>
+
+    <!-- Fullscreen -->
+    <button class="nav-btn" id="fsBtn" onclick="toggleFullscreen()" aria-label="Fullscreen">
+      <svg viewBox="0 0 24 24" id="fsIcon"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+    </button>
+
+    <!-- Exit -->
+    <button class="nav-btn nav-btn-exit" onclick="exitGame()" aria-label="Exit game">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      <span>Exit</span>
+    </button>
+  </div>
+</div>
+
+<!-- ── MAIN AREA ─────────────────────────────────────────── -->
+<div class="main-area">
+
+  <!-- Game iframe -->
+  <div class="game-frame-wrap" id="frameWrap">
+    <div class="frame-loader" id="frameLoader">
+      <div class="loader-emoji" id="loaderEmoji">🎮</div>
+      <div class="loader-spinner"></div>
+      <div class="loader-text">Loading game…</div>
+    </div>
+    <iframe id="gameFrame" allowfullscreen title="Game" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups"></iframe>
+    <!-- Fullscreen exit button (shown only in fullscreen CSS mode) -->
+    <button class="fullscreen-exit" onclick="toggleFullscreen()">
+      <svg viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+      Exit Fullscreen
+    </button>
+  </div>
+
+  <!-- Info panel -->
+  <aside class="info-panel" id="infoPanel" aria-label="Game information">
+    <div class="info-panel-inner" id="infoPanelInner">
+      <!-- Populated by JS -->
+    </div>
+  </aside>
+
+</div>
+
+<script src="games.js"></script>
+<script>
+// ── Read URL params ──────────────────────────────────────────
+const params   = new URLSearchParams(window.location.search);
+const gameId   = params.get('id');
+const gameUrl  = params.get('url');   // fallback direct URL
+const fromPage = params.get('from') || 'browse.html';
+
+// ── Find game data ───────────────────────────────────────────
+const game = (typeof GAMES !== 'undefined' && gameId)
+  ? GAMES.find(g => g.id === gameId)
+  : null;
+
+// ── Populate nav ─────────────────────────────────────────────
+function populate() {
+  const title    = game ? game.title    : (params.get('title') || 'Game');
+  const emoji    = game ? game.emoji    : '🎮';
+  const category = game ? game.category : '';
+  const url      = game ? game.url      : gameUrl;
+
+  document.title = `${title} — PlaySphere`;
+  document.getElementById('navEmoji').textContent    = emoji;
+  document.getElementById('navTitle').textContent    = title;
+  document.getElementById('navCategory').textContent =
+    category ? category.charAt(0).toUpperCase() + category.slice(1) : '';
+  document.getElementById('loaderEmoji').textContent = emoji;
+
+  if (url) {
+    const frame = document.getElementById('gameFrame');
+    frame.src = url;
+    frame.addEventListener('load', () => {
+      document.getElementById('frameLoader').classList.add('hidden');
+    });
+  } else {
+    document.getElementById('frameLoader').innerHTML =
+      '<div style="font-size:48px">😕</div><div class="loader-text" style="color:var(--accent2)">Game not found</div>';
+  }
+
+  buildInfoPanel();
+}
+
+// ── Build info panel ─────────────────────────────────────────
+function buildInfoPanel() {
+  if (!game) return;
+
+  // Controls map (add your own per-game controls here)
+  const controlsMap = {
+    snake:      [['Arrow keys','Move'],['P','Pause']],
+    flappy:     [['Space / Click','Flap']],
+    tictactoe:  [['Click','Place mark']],
+    memory:     [['Click','Flip card']],
+    snakeladder:[['Click','Roll dice']],
+    '2048':     [['Arrow keys','Slide tiles']],
+    aim:        [['Click','Hit target']],
+    asteroids:  [['WASD / Arrows','Move'],['Space','Shoot'],['S','Shield']],
+    runner:     [['Space / Click','Jump'],['↓','Slide']],
+    minesweeper:[['Click','Reveal'],['Right-click','Flag']],
+    sudoku:     [['Click + Type','Fill cell'],['H','Hint']],
+    typing:     [['Type','Play']],
+    whack:      [['Click','Whack!']],
+    apex:       [['← →','Steer'],['↑','Boost']],
+    deadshot:   [['Mouse','Aim & Shoot']],
+  };
+
+  const badge = game.badge
+    ? `<span class="panel-badge badge-${game.badge}">${
+        game.badge==='hot'?'🔥 Hot':game.badge==='new'?'✨ New':'⭐ Top'
+      }</span>`
+    : '';
+
+  const controls = (controlsMap[game.id] || [['Various','Controls']]).map(([key, action]) =>
+    `<div class="control-row">
+       <span class="key-badge">${key}</span>
+       <span>${action}</span>
+     </div>`
+  ).join('');
+
+  // Find similar games (same category, not this game)
+  const similar = (typeof GAMES !== 'undefined')
+    ? GAMES.filter(g => g.category === game.category && g.id !== game.id).slice(0, 3)
+    : [];
+
+  const similarHTML = similar.length ? `
+    <div class="panel-divider"></div>
+    <div class="panel-section-label">Similar Games</div>
+    <div class="similar-games">
+      ${similar.map(g => `
+        <a href="game-player.html?id=${g.id}" class="similar-item">
+          <span class="similar-emoji">${g.emoji}</span>
+          <div class="similar-info">
+            <div class="similar-name">${g.title}</div>
+            <div class="similar-cat">${g.category.charAt(0).toUpperCase()+g.category.slice(1)}</div>
+          </div>
+          <span class="similar-arrow">›</span>
+        </a>`).join('')}
+    </div>` : '';
+
+  document.getElementById('infoPanelInner').innerHTML = `
+    <div class="panel-thumb" style="background:${game.gradient}">
+      <span>${game.emoji}</span>
+      ${badge}
+    </div>
+
+    <div class="panel-title">${game.title}</div>
+    <div class="panel-meta">
+      <span class="panel-category">${game.category.charAt(0).toUpperCase()+game.category.slice(1)}</span>
+      <span class="panel-rating">★ ${game.rating.toFixed(1)}</span>
+      <span class="panel-players"><span class="player-count" data-game="${game.id}">${game.players.toLocaleString()}</span> playing</span>
+    </div>
+    <div class="panel-desc">${game.desc}</div>
+
+    <div class="panel-divider"></div>
+
+    <div class="panel-section-label">How to Play</div>
+    <div class="controls-list">${controls}</div>
+
+    <button class="panel-fullscreen-btn" onclick="toggleFullscreen()">
+      <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+      Open Fullscreen
+    </button>
+
+    ${similarHTML}
+
+    <div class="panel-divider"></div>
+    <div style="font-size:12px;color:var(--muted);text-align:center;line-height:1.6;">
+      Player count updates every 5 seconds.<br>All games are free to play, no account needed.
+    </div>
+  `;
+
+  // Live player count ticker
+  let count = game.players;
+  setInterval(() => {
+    count += Math.floor(Math.random() * 20) - 10;
+    count = Math.max(100, count);
+    document.querySelectorAll('.player-count').forEach(el => {
+      el.textContent = count.toLocaleString();
+    });
+  }, 5000);
+}
+
+// ── Info panel toggle ────────────────────────────────────────
+let panelOpen = false;
+function toggleInfo() {
+  panelOpen = !panelOpen;
+  document.getElementById('infoPanel').classList.toggle('open', panelOpen);
+  const btn = document.getElementById('infoToggle');
+  btn.style.background = panelOpen ? 'rgba(124,92,252,0.22)' : '';
+  btn.style.borderColor = panelOpen ? 'rgba(124,92,252,0.5)' : '';
+}
+
+// ── Fullscreen ───────────────────────────────────────────────
+let isFull = false;
+function toggleFullscreen() {
+  isFull = !isFull;
+  document.getElementById('frameWrap').classList.toggle('fullscreen-mode', isFull);
+  document.getElementById('fsIcon').innerHTML = isFull
+    ? '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>'
+    : '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
+}
+
+// Native browser fullscreen (double-click iframe)
+document.getElementById('gameFrame').addEventListener('dblclick', () => {
+  const frame = document.getElementById('gameFrame');
+  if (frame.requestFullscreen) frame.requestFullscreen();
+  else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+});
+
+// ── Exit game ────────────────────────────────────────────────
+function exitGame() {
+  // Animate out
+  document.getElementById('frameWrap').style.opacity = '0';
+  document.getElementById('frameWrap').style.transition = 'opacity 0.3s';
+  setTimeout(() => { window.location.href = fromPage; }, 280);
+}
+
+// ── Custom Cursor ────────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const ring   = document.getElementById('cursorRing');
+let mx=0, my=0, rx=0, ry=0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx+'px'; cursor.style.top = my+'px';
+});
+(function animateRing() {
+  rx += (mx-rx)*0.12; ry += (my-ry)*0.12;
+  ring.style.left = rx+'px'; ring.style.top = ry+'px';
+  requestAnimationFrame(animateRing);
+})();
+
+document.querySelectorAll('a,button').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.width='16px'; cursor.style.height='16px';
+    ring.style.width='52px'; ring.style.height='52px';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.width='10px'; cursor.style.height='10px';
+    ring.style.width='36px'; ring.style.height='36px';
+  });
+});
+
+// ── Keyboard shortcut: Esc exits fullscreen, Ctrl+I toggles info ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && isFull) toggleFullscreen();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'i') { e.preventDefault(); toggleInfo(); }
+});
+
+// ── Run ──────────────────────────────────────────────────────
+populate();
+</script>
+</body>
+</html>

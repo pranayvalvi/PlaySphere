@@ -160,7 +160,7 @@ nav {
 .btn-primary {
   background: var(--accent); color: white; border: none;
   font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
-  padding: 14px 32px; border-radius: 12px; cursor: none; transition: all 0.25s;
+  padding: 14px 32px; border-radius: 12px; cursor: pointer; transition: all 0.25s;
   box-shadow: 0 0 30px rgba(124,92,252,0.4), 0 4px 20px rgba(0,0,0,0.3);
 }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(124,92,252,0.55), 0 8px 30px rgba(0,0,0,0.4); }
@@ -168,7 +168,7 @@ nav {
   background: rgba(255,255,255,0.05); color: var(--text);
   border: 1px solid var(--border); font-family: 'DM Sans', sans-serif;
   font-size: 15px; font-weight: 500; padding: 14px 32px; border-radius: 12px;
-  cursor: none; transition: all 0.25s; backdrop-filter: blur(10px);
+  cursor: pointer; transition: all 0.25s; backdrop-filter: blur(10px);
 }
 .btn-ghost:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
 .hero-stats { display:flex;gap:48px;justify-content:center;margin-top:60px;animation:fadeInUp 0.7s ease 0.4s both; }
@@ -320,6 +320,57 @@ footer {
 ::-webkit-scrollbar { width:6px; }
 ::-webkit-scrollbar-track { background:var(--bg); }
 ::-webkit-scrollbar-thumb { background:rgba(124,92,252,0.4);border-radius:3px; }
+
+/* Hamburger */
+.nav-hamburger { display:none;flex-direction:column;gap:5px;background:none;border:none;padding:6px;border-radius:8px;cursor:pointer; }
+.nav-hamburger span { display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all 0.3s; }
+.nav-hamburger.open span:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2) { opacity:0; }
+.nav-hamburger.open span:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+
+@media (max-width:900px) {
+  .featured-row { grid-template-columns:1fr; }
+  .trending-leaderboard-grid { grid-template-columns:1fr !important; gap:40px !important; }
+}
+@media (max-width:768px) {
+  nav { padding:0 20px; }
+  .nav-hamburger { display:flex; }
+  .nav-links {
+    display:none;position:absolute;top:64px;left:0;right:0;
+    flex-direction:column;background:rgba(8,11,20,0.97);
+    backdrop-filter:blur(20px);border-bottom:1px solid var(--border);
+    padding:16px 20px;gap:4px;z-index:99;
+  }
+  .nav-links.open { display:flex; }
+  .nav-links a { padding:10px 14px;font-size:15px; }
+  .cursor,.cursor-ring { display:none; }
+  body { cursor:auto; }
+  a,button,.game-card,.tab,.play-now { cursor:pointer; }
+  .hero { padding-top:64px;min-height:100svh; }
+  .hero-content { padding:0 20px; }
+  .hero-title { letter-spacing:-2px; }
+  .hero-stats { gap:28px;margin-top:40px; }
+  .hero-sub { font-size:16px; }
+  .btn-primary,.btn-ghost { padding:13px 24px;font-size:14px;width:100%;text-align:center; }
+  .hero-actions { flex-direction:column;align-items:center; }
+  section { padding:60px 20px; }
+  .categories-header { flex-direction:column;align-items:flex-start;margin-bottom:32px; }
+  .games-grid { grid-template-columns:repeat(2,1fr);gap:14px; }
+  .featured-row { grid-template-columns:1fr; }
+  .cta-box { padding:48px 24px;border-radius:20px; }
+  .cta-emoji { font-size:44px; }
+  footer { padding:36px 20px;flex-direction:column;align-items:flex-start;gap:16px; }
+  .footer-links { flex-wrap:wrap;gap:12px; }
+  .orb-1 { width:220px;height:220px; }
+  .orb-2 { width:180px;height:180px; }
+  .orb-3 { width:150px;height:150px; }
+}
+@media (max-width:480px) {
+  .games-grid { grid-template-columns:1fr; }
+  .hero-stats { gap:20px; }
+  .stat-num { font-size:22px; }
+  .tab { padding:6px 14px;font-size:12px; }
+}
 </style>
 </head>
 <body>
@@ -333,12 +384,14 @@ footer {
     <div class="logo-dot"></div>
     PlaySphere
   </div>
-  <ul class="nav-links">
+  <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="navLinks">
     <li><a href="index.html" class="active">Home</a></li>
     <li><a href="browse.html">Browse</a></li>
     <li><a href="trending.html">Trending</a></li>
     <li><a href="about.html">About</a></li>
-    <li><a href="#" class="nav-cta" id="signupBtn">Sign Up Free</a></li>
   </ul>
 </nav>
 
@@ -363,14 +416,14 @@ footer {
     </div>
     <div class="hero-stats">
       <div class="stat"><div class="stat-num">50+</div><div class="stat-label">Free Games</div></div>
-      <div class="stat"><div class="stat-num">12K</div><div class="stat-label">Players Today</div></div>
+
       <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Free to Play</div></div>
     </div>
   </div>
 </div>
 
 <!-- MARQUEE -->
-<div class="marquee-section">
+<div class="marquee-section" onmouseenter="this.querySelector('.marquee-track').style.animationPlayState='paused'" onmouseleave="this.querySelector('.marquee-track').style.animationPlayState='running'">
   <div class="marquee-track">
     <div class="marquee-item"><span>🐍</span> Snake</div>
     <div class="marquee-item"><span>⭕</span> Tic-Tac-Toe</div>
@@ -382,6 +435,8 @@ footer {
     <div class="marquee-item"><span>💣</span> Minesweeper</div>
     <div class="marquee-item"><span>🏃</span> Endless Runner</div>
     <div class="marquee-item"><span>🎯</span> Aim Trainer</div>
+    <div class="marquee-item"><span>🏎️</span> Apex Velocity</div>
+    <div class="marquee-item"><span>🔫</span> Deadshot</div>
     <div class="marquee-item"><span>🐍</span> Snake</div>
     <div class="marquee-item"><span>⭕</span> Tic-Tac-Toe</div>
     <div class="marquee-item"><span>🃏</span> Memory Match</div>
@@ -392,6 +447,8 @@ footer {
     <div class="marquee-item"><span>💣</span> Minesweeper</div>
     <div class="marquee-item"><span>🏃</span> Endless Runner</div>
     <div class="marquee-item"><span>🎯</span> Aim Trainer</div>
+    <div class="marquee-item"><span>🏎️</span> Apex Velocity</div>
+    <div class="marquee-item"><span>🔫</span> Deadshot</div>
   </div>
 </div>
 
@@ -440,7 +497,7 @@ footer {
             &nbsp;3.2K playing
           </div>
           <!-- FIX: was missing href, now points to correct relative path -->
-          <a href="games/snake/snake.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=snake&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -464,7 +521,7 @@ footer {
           <div class="card-desc">Challenge our unbeatable AI or play with a friend.</div>
           <div class="card-footer">
             <span style="font-size:12px;color:var(--muted)">1.1K playing</span>
-            <a href="games/tic-tac-toe/tictactoe.html" class="play-now">Play Now →</a>
+            <a href="game-player.html?id=tictactoe&from=index.html" class="play-now">Play Now →</a>
           </div>
         </div>
       </div>
@@ -487,7 +544,7 @@ footer {
         <div class="card-desc">Flip cards and test your memory. Can you clear the board?</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)">876 playing</span>
-          <a href="games/memory/memory.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=memory&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -505,7 +562,7 @@ footer {
         <div class="card-desc">Roll the dice and race to the top! Classic board game with smooth animations and multiplayer fun.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)">654 playing</span>
-          <a href="games/snake-and-ladder/snakeandladder.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=snakeladder&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -523,7 +580,7 @@ footer {
         <div class="card-desc">Merge tiles to reach 2048! Strategic puzzle game with neon aesthetics.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)">2.1K playing</span>
-          <a href="games/2048/2048.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=2048&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -541,7 +598,7 @@ footer {
         <div class="card-desc">Test your reflexes! Click targets fast and track your reaction time.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)">1.8K playing</span>
-          <a href="games/aim-trainer/aim-trainer.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=aim&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -559,7 +616,7 @@ footer {
         <div class="card-desc">Destroy asteroids and survive! Progressive levels with shield mechanics.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)">2.4K playing</span>
-          <a href="games/asteroids/asteroids.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=asteroids&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -577,7 +634,7 @@ footer {
         <div class="card-desc">Jump and dodge obstacles! Collect coins and beat your high score.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)">1.5K playing</span>
-          <a href="games/endless-runner/endless-runner.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=runner&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -595,7 +652,7 @@ footer {
         <div class="card-desc">Tap to flap through the pipes! Classic arcade challenge with neon style.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)">3.8K playing</span>
-          <a href="games/flappy-bird/flappy-bird.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=flappy&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -613,7 +670,7 @@ footer {
         <div class="card-desc">Uncover tiles and avoid mines! Three difficulty levels to challenge yourself.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)">2.2K playing</span>
-          <a href="games/minesweeper/minesweeper.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=minesweeper&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -631,7 +688,7 @@ footer {
         <div class="card-desc">Fill the grid with numbers 1-9. Logic puzzle with multiple difficulty levels.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="sudoku">3200</span> playing</span>
-          <a href="games/sudoku/sudoku.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=sudoku&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -649,7 +706,7 @@ footer {
         <div class="card-desc">Test your typing speed and accuracy! Neon edition with multiple time modes.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="typing">1900</span> playing</span>
-          <a href="games/typing-speed/typing-speed.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=typing&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -667,7 +724,7 @@ footer {
         <div class="card-desc">Click the moles before they hide! Three difficulty levels and custom cursor.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="whack">2300</span> playing</span>
-          <a href="games/whack-a-mole/whack-a-mole.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=whack&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -677,15 +734,15 @@ footer {
         <div class="thumb-gradient" style="background:linear-gradient(135deg,#1a0a00 0%,#3a1a0a 40%,#ffd700 70%,#ff9f43 100%);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;">🏎️</div>
         <div class="card-thumb-overlay"><div class="play-btn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-        <span class="card-badge badge-hot">🔥 New</span>
+        <span class="card-badge badge-new">✨ New</span>
       </div>
       <div class="card-body">
         <div class="card-meta"><span class="card-category">Action</span><span class="card-rating">★ 4.8</span></div>
-        <div class="card-title">Apex-Velocity-v2</div>
-        <div class="card-desc">Click the moles before they hide! Three difficulty levels and custom cursor.</div>
+        <div class="card-title">Apex Velocity</div>
+        <div class="card-desc">High-speed racing action! Dodge obstacles and reach maximum velocity.</div>
         <div class="card-footer">
           <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="whack">2300</span> playing</span>
-          <a href="games/apex-velocity/apex-velocity-v2.html" class="play-now">Play Now →</a>
+          <a href="game-player.html?id=apex&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -698,12 +755,12 @@ footer {
         <span class="card-badge badge-new">✨ New</span>
       </div>
       <div class="card-body">
-        <div class="card-meta"><span class="card-category">Action</span><span class="card-rating">★ 9</span></div>
-        <div class="card-title">deadshot-multiplayer</div>
-        <div class="card-desc">Test your aim and accuracy!Neon edition with deadshot-multiplayer.</div>
+        <div class="card-meta"><span class="card-category">Action</span><span class="card-rating">★ 4.9</span></div>
+        <div class="card-title">Deadshot Multiplayer</div>
+        <div class="card-desc">Test your aim and accuracy! Multiplayer shooting game with precision targeting.</div>
         <div class="card-footer">
-          <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="typing">1900</span> playing</span>
-          <a href="games/deadshot-multiplayer/deadshot-multiplayer.html" class="play-now">Play Now →</a>
+          <span style="font-size:12px;color:var(--muted)"><span class="player-count" data-game="deadshot">1900</span> playing</span>
+          <a href="game-player.html?id=deadshot&from=index.html" class="play-now">Play Now →</a>
         </div>
       </div>
     </div>
@@ -714,7 +771,7 @@ footer {
 <div class="divider-full"></div>
 
 <!-- TRENDING + LEADERBOARD -->
-<section style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;">
+<section class="trending-leaderboard-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;">
   <div class="reveal">
     <div class="section-label">📈 Trending Now</div>
     <h2 class="section-title" style="margin-bottom:36px;">What's Hot</h2>
@@ -727,14 +784,14 @@ footer {
       </div>
       <div class="trending-item">
         <div class="trend-rank top">02</div>
-        <div class="trend-thumb"><div style="width:100%;height:100%;background:linear-gradient(135deg,#92400e,#fbbf24);display:flex;align-items:center;justify-content:center;font-size:18px;">🐦</div></div>
-        <div class="trend-info"><div class="trend-name">Flappy Bird</div><div class="trend-players">2,100 playing</div></div>
+        <div class="trend-thumb"><div style="width:100%;height:100%;background:linear-gradient(135deg,#7c2d12,#ea580c);display:flex;align-items:center;justify-content:center;font-size:18px;">⭕</div></div>
+        <div class="trend-info"><div class="trend-name">Tic-Tac-Toe</div><div class="trend-players">1,100 playing</div></div>
         <div class="trend-change">↑ 18%</div>
       </div>
       <div class="trending-item">
         <div class="trend-rank">03</div>
-        <div class="trend-thumb"><div style="width:100%;height:100%;background:linear-gradient(135deg,#7c2d12,#ea580c);display:flex;align-items:center;justify-content:center;font-size:18px;">⭕</div></div>
-        <div class="trend-info"><div class="trend-name">Tic-Tac-Toe</div><div class="trend-players">1,100 playing</div></div>
+        <div class="trend-thumb"><div style="width:100%;height:100%;background:linear-gradient(135deg,#92400e,#fbbf24);display:flex;align-items:center;justify-content:center;font-size:18px;">🐦</div></div>
+        <div class="trend-info"><div class="trend-name">Flappy Bird</div><div class="trend-players">2,100 playing</div></div>
         <div class="trend-change">↑ 9%</div>
       </div>
       <div class="trending-item">
@@ -763,17 +820,17 @@ footer {
       </div>
       <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:16px;">
         <div style="font-size:22px;">🥈</div>
-        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">FlappyKing</div><div style="font-size:12px;color:var(--muted)">Flappy Bird · 41,750 pts</div></div>
+        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">TicTacMaster</div><div style="font-size:12px;color:var(--muted)">Tic-Tac-Toe · 42,100 pts</div></div>
         <div style="font-family:'Syne',sans-serif;font-weight:800;color:#94a3b8;font-size:15px;">#2</div>
       </div>
       <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:16px;">
         <div style="font-size:22px;">🥉</div>
-        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">MindMaster</div><div style="font-size:12px;color:var(--muted)">Memory Match · 38,400 pts</div></div>
+        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">FlappyKing</div><div style="font-size:12px;color:var(--muted)">Flappy Bird · 38,400 pts</div></div>
         <div style="font-family:'Syne',sans-serif;font-weight:800;color:#cd7f32;font-size:15px;">#3</div>
       </div>
       <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:16px;">
         <div style="font-size:22px;opacity:0.5">👤</div>
-        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">PongWizard</div><div style="font-size:12px;color:var(--muted)">Snakes &amp; Ladders · 32,100 pts</div></div>
+        <div style="flex:1;"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;">MemoryKing</div><div style="font-size:12px;color:var(--muted)">Memory Match · 32,100 pts</div></div>
         <div style="font-family:'Syne',sans-serif;font-weight:800;color:var(--muted);font-size:15px;">#4</div>
       </div>
     </div>
@@ -810,6 +867,7 @@ footer {
 </footer>
 
 <script src="app.js"></script>
+<script src="script.js"></script>
 <script>
   const cursor = document.getElementById('cursor');
   const ring = document.getElementById('cursorRing');
@@ -846,6 +904,22 @@ footer {
     });
   }, { threshold: 0.1 });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Hamburger nav toggle
+  const hamburger = document.getElementById('navHamburger');
+  const navLinks  = document.getElementById('navLinks');
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      navLinks.classList.toggle('open');
+    });
+    navLinks.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => {
+        hamburger.classList.remove('open');
+        navLinks.classList.remove('open');
+      });
+    });
+  }
 </script>
 </body>
 </html>
